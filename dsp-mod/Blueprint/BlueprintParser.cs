@@ -13,16 +13,16 @@ namespace DspBlueprintTransform.Blueprint
         public static BlueprintData FromStr(string strData)
         {
             if (!strData.StartsWith(Start, StringComparison.Ordinal))
-                throw new FormatException("Invalid start");
+                throw new FormatException("不是有效的蓝图码，请确认完整复制了以 BLUEPRINT: 开头的蓝图代码");
 
             int p1 = strData.IndexOf('"', Start.Length);
             if (p1 < 0)
-                throw new FormatException("Header terminator not found");
+                throw new FormatException("蓝图码格式不完整，缺少必要的头部信息，请确认完整复制了蓝图代码");
 
             string headerPart = strData.Substring(Start.Length, p1 - Start.Length);
             string[] cells = headerPart.Split(',');
             if (cells.Length < 15)
-                throw new FormatException("Header too short");
+                throw new FormatException("蓝图码格式不完整，缺少必要的头部信息，请确认完整复制了蓝图代码");
 
             var header = new BlueprintHeader
             {
@@ -47,13 +47,13 @@ namespace DspBlueprintTransform.Blueprint
 
             int p2 = strData.Length - 33;
             if (p2 < p1 || strData[p2] != '"')
-                throw new FormatException("Checksum marker not found");
+                throw new FormatException("蓝图码格式不完整，缺少校验信息，请确认完整复制了蓝图代码");
 
             string forChecksum = strData.Substring(0, p2);
             string expected = strData.Substring(p2 + 1);
             string actual = BlueprintChecksum.HexDigest(Encoding.ASCII.GetBytes(forChecksum));
             if (!string.Equals(actual, expected, StringComparison.Ordinal))
-                throw new FormatException($"Checksum mismatch: expected {expected}, got {actual}");
+                throw new FormatException($"蓝图码校验失败，内容可能被截断或修改，请重新复制完整的蓝图代码（期望: {expected}, 实际: {actual}）");
 
             string encoded = strData.Substring(p1 + 1, p2 - (p1 + 1));
             byte[] gzipped = Convert.FromBase64String(encoded);
