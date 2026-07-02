@@ -167,6 +167,7 @@ namespace DspBlueprintTransform.Blueprint
                     {
                         v.Tilt = -v.Tilt;
                         v.Tilt2 = -v.Tilt2;
+                        // 依赖 res.Buildings[i].Index == i（列表位置即对象索引）；该不变量由 parser 输出保证，本方法不做重排
                         if (beltSlotBuildIndexes.Contains(v.InputObjIdx))
                         {
                             var inputBuild = res.Buildings[v.InputObjIdx];

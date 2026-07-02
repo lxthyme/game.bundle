@@ -6,7 +6,7 @@
 
 **Architecture:** 纯 C#、不依赖 UnityEngine 的 `Blueprint` 核心库（校验和、数据模型、蓝图字符串编解码、三个变换算法、建筑翻转元数据表）+ 依赖 UnityEngine/BepInEx 的 `Plugin` 工程（OnGUI 悬浮窗、剪贴板读写、热键）。核心库可在无游戏环境下用 `dotnet test` 完整验证；`Plugin` 工程需要 Windows 游戏机的 `Managed` DLL 才能编译。
 
-**Tech Stack:** C# / .NET，`Blueprint` 库 target `netstandard2.0`，`Blueprint.Tests` target `net8.0`（用现代 dotnet SDK 跑测试，不需要 net472 交叉编译工具链），`Plugin` target `net472`（匹配 BepInEx 5 / Unity Mono），xunit，BepInEx 5.4.23.5。
+**Tech Stack:** C# / .NET，`Blueprint` 库 target `netstandard2.0`，`Blueprint.Tests` target `net10.0`（原计划写 net8.0，实际安装的 dotnet SDK 更新，用现代 dotnet SDK 跑测试，不需要 net472 交叉编译工具链），`Plugin` target `net472`（匹配 BepInEx 5 / Unity Mono），xunit，BepInEx 5.4.23.5。
 
 ## Global Constraints
 

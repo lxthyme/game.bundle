@@ -111,5 +111,57 @@ namespace DspBlueprintTransform.Blueprint.Tests
             Assert.Equal(2.25, result.Buildings[1].LocalOffset[0].Y, 6);
             Assert.Equal(0, result.Buildings[1].Yaw[0], 6);
         }
+
+        [Fact]
+        public void ChainedHorizontalThenVerticalOffset_PreservesIndexIntegrity()
+        {
+            // 模拟 TransformWindow.ApplyOffset：先水平偏移，再把结果喂给垂直偏移
+            var bp = BuildFixture();
+            var afterHorizontal = BlueprintTransform.HorizontalOffset(bp, 5, -3);
+            var result = BlueprintTransform.VerticalOffset(afterHorizontal, 2);
+
+            Assert.Equal(3, result.Buildings.Count);
+
+            // X/Y 应反映水平偏移后的坐标(5.5,-2.5 / 3.5,-0.75)，而非原始坐标，
+            // 说明水平偏移确实先于垂直偏移生效
+            Assert.Equal(2303, result.Buildings[0].ItemId);
+            Assert.Equal(3.5, result.Buildings[0].LocalOffset[0].X, 4);
+            Assert.Equal(-0.75, result.Buildings[0].LocalOffset[0].Y, 4);
+            Assert.Equal(2, result.Buildings[0].InputObjIdx);
+            Assert.Equal(0, result.Buildings[0].Index);
+
+            Assert.Equal(2001, result.Buildings[1].ItemId);
+            Assert.Equal(5.5, result.Buildings[1].LocalOffset[0].X, 4);
+            Assert.Equal(-2.5, result.Buildings[1].LocalOffset[0].Y, 4);
+            Assert.Equal(-1, result.Buildings[1].InputObjIdx); // 传送带可悬空，不需要地基
+            Assert.Equal(1, result.Buildings[1].Index);
+
+            Assert.Equal(1131, result.Buildings[2].ItemId); // 自动补的地基
+            Assert.Equal(-10, result.Buildings[2].LocalOffset[0].Z, 4);
+            Assert.Equal(2, result.Buildings[2].Index);
+        }
+
+        [Fact]
+        public void LinearTransformation_OnPreviouslyOffsetBlueprint_PreservesConnectionIndices()
+        {
+            var bp = BuildFixture();
+            var afterOffset = BlueprintTransform.HorizontalOffset(bp, 5, -3);
+            var result = BlueprintTransform.LinearTransformation(afterOffset, -1, 1, 0);
+
+            // 传送带(2001)：翻转基于偏移后坐标(5.5,-2.5)计算，而非原始坐标(0.5,0.5)
+            Assert.Equal(-5.5, result.Buildings[0].LocalOffset[0].X, 6);
+            Assert.Equal(-2.5, result.Buildings[0].LocalOffset[0].Y, 6);
+            Assert.Equal(-90, result.Buildings[0].Yaw[0], 6);
+            Assert.Equal(0, result.Buildings[0].Tilt, 6);
+            Assert.Equal(-1, result.Buildings[0].InputObjIdx);
+            Assert.Equal(-1, result.Buildings[0].OutputObjIdx);
+
+            // 制造台(2303)：翻转基于偏移后坐标(3.5,-0.75)计算
+            Assert.Equal(-3.5, result.Buildings[1].LocalOffset[0].X, 6);
+            Assert.Equal(-0.75, result.Buildings[1].LocalOffset[0].Y, 6);
+            Assert.Equal(0, result.Buildings[1].Yaw[0], 6);
+            Assert.Equal(-1, result.Buildings[1].InputObjIdx);
+            Assert.Equal(-1, result.Buildings[1].OutputObjIdx);
+        }
     }
 }
