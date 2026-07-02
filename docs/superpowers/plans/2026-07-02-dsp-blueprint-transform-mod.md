@@ -1323,7 +1323,7 @@ git commit -m "feat(dsp-mod): 实现水平偏移变换"
 - Consumes: `BuildingMeta.IsHanging/IsInserterSlotBuild`（Task 5）。
 - Produces: `BlueprintTransform.VerticalOffset(BlueprintData, double offsetZ) -> BlueprintData`。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 在 `dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs` 里追加（`BuildFixture` 复用 Task 6 已有的私有方法）：
 
@@ -1351,7 +1351,7 @@ git commit -m "feat(dsp-mod): 实现水平偏移变换"
         }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1360,7 +1360,7 @@ dotnet test Blueprint.Tests --filter VerticalOffset_AddsBaseAndReordersWhenFloat
 
 Expected: 编译失败（找不到 `VerticalOffset`）。
 
-- [ ] **Step 3: 实现 VerticalOffset**
+- [x] **Step 3: 实现 VerticalOffset**
 
 在 `dsp-mod/Blueprint/BlueprintTransform.cs` 的 `BlueprintTransform` 类里追加：
 
@@ -1447,7 +1447,7 @@ Expected: 编译失败（找不到 `VerticalOffset`）。
 
 （`BlueprintData.Buildings` 的 setter 需要是可写属性；Task 3 里已经用 `public List<BlueprintBuilding> Buildings = ...` 字段形式，可直接赋值 `res.Buildings = newBuildings;`，无需额外改动。）
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1456,7 +1456,7 @@ dotnet test Blueprint.Tests --filter BlueprintTransformTests
 
 Expected: 全部 PASS（包括 Task 6 的用例）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
