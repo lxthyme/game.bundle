@@ -540,7 +540,7 @@ BLUEPRINT:1,10,0,0,0,0,0,0,12345600000000,0.10.34.28281,%E6%B5%8B%E8%AF%95%E8%93
 
 解码期望：`version=2`、`cursorOffset={1,2}`、`dragBoxSize={3,3}`、`primaryAreaIdx=0`、1 个 area（`index=0, parentIndex=-1, areaSegments=200, size={3,3}`）、2 个 building（`itemId=2001`（传送带）`localOffset[0]={0.5,0.5,0}, yaw[0]=90`；`itemId=2303`（制造台）`localOffset[0]={-1.5,2.25,0}, recipeId=15`），`header.shortDesc="测试蓝图"`、`author="claude"`、`customVersion="1.0"`、`desc="fixture for csharp port"`、`gameVersion="0.10.34.28281"`。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 创建 `dsp-mod/Blueprint.Tests/BlueprintParserTests.cs`：
 
@@ -621,7 +621,7 @@ namespace DspBlueprintTransform.Blueprint.Tests
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -630,7 +630,7 @@ dotnet test Blueprint.Tests --filter BlueprintParserTests
 
 Expected: 编译失败（找不到 `BlueprintParser`）。
 
-- [ ] **Step 3: 实现 BlueprintParser**
+- [x] **Step 3: 实现 BlueprintParser**
 
 创建 `dsp-mod/Blueprint/BlueprintParser.cs`：
 
@@ -955,7 +955,7 @@ namespace DspBlueprintTransform.Blueprint
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -964,7 +964,7 @@ dotnet test Blueprint.Tests --filter BlueprintParserTests
 
 Expected: 3 个用例全部 PASS。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
