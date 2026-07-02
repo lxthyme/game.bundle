@@ -985,7 +985,7 @@ git commit -m "feat(dsp-mod): 移植蓝图字符串编解码(仅当前版本格�
 
 数据表逐条照抄 `3rd/edit-dspblue-print/src/utils/itemsUtil.js` 的 `inserterSlotBuildInfos`/`beltSlotBuildInfos`。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 创建 `dsp-mod/Blueprint.Tests/BuildingMetaTests.cs`：
 
@@ -1039,7 +1039,7 @@ namespace DspBlueprintTransform.Blueprint.Tests
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1048,7 +1048,7 @@ dotnet test Blueprint.Tests --filter BuildingMetaTests
 
 Expected: 编译失败（找不到 `BuildingMeta`/`SlotAxis`）。
 
-- [ ] **Step 3: 实现 BuildingMeta**
+- [x] **Step 3: 实现 BuildingMeta**
 
 创建 `dsp-mod/Blueprint/BuildingMeta.cs`：
 
@@ -1172,7 +1172,7 @@ namespace DspBlueprintTransform.Blueprint
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1181,11 +1181,11 @@ dotnet test Blueprint.Tests --filter BuildingMetaTests
 
 Expected: 4 个用例全部 PASS。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
-git add dsp-mod/Blueprint/BuildingMeta.cs dsp-mod/Blueprint.Tests/BuildingMetaTests.cs
+git add dsp-mod/Blueprint/BuildingMeta.cs dsp-mod/Blueprint.Tests/BuildingMetaTests.cs docs/superpowers/plans/2026-07-02-dsp-blueprint-transform-mod.md
 git commit -m "feat(dsp-mod): 移植建筑翻转元数据表"
 ```
 
