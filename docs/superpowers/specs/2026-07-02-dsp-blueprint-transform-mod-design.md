@@ -70,7 +70,7 @@ dsp-mod/
 |---|---|
 | `parser.js: fromStr/toStr` | `BlueprintParser.FromStr/ToStr`（仅当前版本分支） |
 | `parser.js: BufferReader/BufferWriter` | `BlueprintData.cs` 内部按需实现或用 `System.IO.BinaryReader/Writer`（.NET 原生字符串读写已内置 7-bit encoded int 前缀，等价于 JS 手写的 `getString/setString`） |
-| `parser.js: digest (md5.js)` | `System.Security.Cryptography.MD5` |
+| `parser.js: digest (md5.js)` | `BlueprintChecksum.Digest`（**不能用 `System.Security.Cryptography.MD5`**——`md5.js` 的初始向量 `INIT_MD5F` 被改过，不是标准 MD5，需逐字节移植自定义实现，否则校验和会被游戏判定不匹配） |
 | `pako.gzip/ungzip` | `System.IO.Compression.GZipStream` |
 | `Home.vue: horizontalOffset` | `BlueprintTransform.HorizontalOffset` |
 | `Home.vue: verticalOffset` | `BlueprintTransform.VerticalOffset` |
