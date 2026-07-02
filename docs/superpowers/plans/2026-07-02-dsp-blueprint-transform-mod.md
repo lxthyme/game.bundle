@@ -114,7 +114,7 @@ git commit -m "chore(dsp-mod): 搭建 Blueprint 核心库与测试工程骨架"
 | `"BLUEPRINT:1,10,0,0,0,0,0,0,0,123456,0.10.34.28281,test"` | `AB8CAA6FF98424011783D6C7FCF5E28C` |
 | `"The quick brown fox jumps over the lazy dog"` | `86DCC27D895972046BC51C8EACA17F64` |
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 创建 `dsp-mod/Blueprint.Tests/BlueprintChecksumTests.cs`：
 
@@ -142,7 +142,7 @@ namespace DspBlueprintTransform.Blueprint.Tests
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -151,7 +151,7 @@ dotnet test Blueprint.Tests --filter BlueprintChecksumTests
 
 Expected: 编译失败（找不到 `BlueprintChecksum` 类型）。
 
-- [ ] **Step 3: 实现 BlueprintChecksum**
+- [x] **Step 3: 实现 BlueprintChecksum**
 
 创建 `dsp-mod/Blueprint/BlueprintChecksum.cs`：
 
@@ -259,7 +259,7 @@ namespace DspBlueprintTransform.Blueprint
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -268,7 +268,7 @@ dotnet test Blueprint.Tests --filter BlueprintChecksumTests
 
 Expected: 5 个用例全部 PASS。**如果不通过**，逐字节核对 `3rd/edit-dspblue-print/src/utils/md5.js` 里的 `K`/`S`/`INIT_MD5F` 常量，不要相信本文件里的手抄版本——上表的期望值才是唯一真相来源（由该文件在 Node 里实际跑出）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
