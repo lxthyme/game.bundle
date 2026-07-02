@@ -2037,7 +2037,7 @@ git commit -m "feat(dsp-mod): 实现蓝图变换悬浮窗 UI"
 **Interfaces:**
 - 无代码接口，纯文档，指导如何把 Task 1-10 的产物部署到 Windows 游戏机。
 
-- [ ] **Step 1: 编写 README**
+- [x] **Step 1: 编写 README**
 
 创建 `dsp-mod/README.md`：
 
@@ -2079,7 +2079,7 @@ dotnet build Plugin/Plugin.csproj -c Release   # 需要 local.props 配好
   （建筑本身的翻转、连接口修正正常，仅这几类建筑的内部优先级配置需要玩家翻转后手动检查）。
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
