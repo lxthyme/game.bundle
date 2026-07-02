@@ -1,0 +1,4 @@
+[submodule "3rd/edit-dspblue-print"]
+	path = 3rd/edit-dspblue-print
+	url = git@github.com:cying314/edit-dspblue-print.git
+	branch = master
