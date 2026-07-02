@@ -20,6 +20,33 @@
 
 ---
 
+## 当前状态与后续步骤（2026-07-02 更新）
+
+**结论：11 个任务全部完成，Task 10 Step 4 除外（见下）。** 最新 commit：`1df266d`（在 `main` 分支，未使用独立 feature 分支/worktree，已获用户同意）。
+
+**已完成并验证：**
+- Task 1-8（`dsp-mod/Blueprint/` 核心库，netstandard2.0，不依赖游戏）：19/19 单元测试通过（含链式变换回归测试），全部用真实 JS 参考实现生成的 golden fixture 交叉验证过。macOS 开发机上可完整运行 `cd dsp-mod && dotnet test Blueprint.Tests` 验证。
+- Task 9-10（`dsp-mod/Plugin/`，BepInEx 插件 + OnGUI 悬浮窗）：代码已写完并通过审查，但**从未在真机上编译成功过**——本机没装 DSP 游戏，缺 `DSPGAME_Data/Managed/` 下的 UnityEngine DLL，`dotnet build Plugin/Plugin.csproj` 目前只能验证到"友好报错提示缺少 `local.props`"这一步（这是设计好的前置检查，见 `EnsureLocalProps`）。
+- Task 11（`dsp-mod/README.md`）：构建/部署/已知限制文档已写好。
+
+**过程中修复过的问题（供参考，不需要重复处理）：**
+1. Task 4 解析异常提示由英文改成中文玩家可读文案
+2. Task 5 建筑元数据表补回了建筑名/不对称提示注释
+3. Task 9 修正了一个真实的 MSBuild bug：`BeforeTargets="Build"` 在现代 SDK 项目里生效太晚（会跑到 CoreCompile 报错之后），改成 `BeforeTargets="BeforeBuild"` 才对
+4. 全分支评审后补充了 BepInEx 依赖获取文档（`.gitignore` + README）+ 链式变换测试
+
+**唯一剩下的未完成项——`Task 10 Step 4: 游戏内手动验证`（在计划正文里搜这行）：**
+必须在装有 DSP 游戏的 Windows 机器上做，具体步骤：
+1. 把 `<DSP 安装目录>/DSPGAME_Data/Managed/` 整个目录路径记下来
+2. 在 `dsp-mod/local.props.example` 基础上复制一份 `dsp-mod/local.props`（已被 `.gitignore` 排除，不会提交），把 `DspManagedDir` 改成上一步的真实路径
+3. 确认 `3rd/BepInEx/BepInEx_win_x64_5.4.23.5/` 目录存在（`README.md` 里有获取方式，也是 gitignore 排除的本地依赖，不在仓库里）
+4. `cd dsp-mod && dotnet build Plugin/Plugin.csproj -c Release`，这次应该能真正编译通过（不再只是报 local.props 缺失）
+5. 把编译产物 `Plugin/bin/Release/net472/{DspBlueprintTransform.dll, Blueprint.dll}` 两个 DLL 一起拷到游戏的 `BepInEx/plugins/DspBlueprintTransform/` 目录（README 里也写了，两个都要拷）
+6. 启动游戏，按 F7 测试悬浮窗能否打开，粘贴真实蓝图码测试解析/偏移/翻转/线性变换，重点验证翻转后火电/化工厂等不对称建筑接口是否仍能正常连接
+7. 验证通过后，把计划文件里 Task 10 Step 4 的 `- [ ]` 改成 `- [x]`，然后这个计划就算彻底完成了
+
+---
+
 ### Task 1: 安装 dotnet SDK，搭建解决方案骨架
 
 **Files:**
