@@ -288,7 +288,7 @@ git commit -m "feat(dsp-mod): 移植蓝图校验和自定义 MD5 变体"
 - Produces: `Vec2I`、`Vec3D`、`BlueprintHeader`、`BlueprintArea`、`BlueprintBuilding`、`BlueprintData`（含 `Clone()` 深拷贝方法），供 Task 4（解析）、Task 6-8（变换）使用。
 - 数值字段用 `double`（对应 JS 里读出 Float32 后按双精度做运算的行为），仅在 Task 4 读写二进制时才在 `float`/`double` 之间转换。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 创建 `dsp-mod/Blueprint.Tests/BlueprintDataTests.cs`：
 
@@ -330,7 +330,7 @@ namespace DspBlueprintTransform.Blueprint.Tests
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -339,7 +339,7 @@ dotnet test Blueprint.Tests --filter BlueprintDataTests
 
 Expected: 编译失败（找不到相关类型）。
 
-- [ ] **Step 3: 实现数据模型**
+- [x] **Step 3: 实现数据模型**
 
 创建 `dsp-mod/Blueprint/BlueprintData.cs`：
 
@@ -503,7 +503,7 @@ namespace DspBlueprintTransform.Blueprint
 
 在 `dsp-mod/Blueprint/Blueprint.csproj` 的 `<PropertyGroup>` 里加上 `<Nullable>enable</Nullable>`（用到了 `byte[]?`/`string?`）；同样也给 `Blueprint.Tests.csproj` 加上。
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -512,7 +512,7 @@ dotnet test Blueprint.Tests --filter BlueprintDataTests
 
 Expected: PASS。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
