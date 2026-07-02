@@ -1849,7 +1849,7 @@ git commit -m "feat(dsp-mod): 搭建 BepInEx Plugin 工程骨架"
 
 **前置条件**：同 Task 9，需要 `local.props` 配好真实 `DspManagedDir` 才能编译验证；本任务只负责写代码。
 
-- [ ] **Step 1: 实现 TransformWindow**
+- [x] **Step 1: 实现 TransformWindow**
 
 创建 `dsp-mod/Plugin/TransformWindow.cs`：
 
@@ -2003,7 +2003,7 @@ namespace DspBlueprintTransform.Plugin
 }
 ```
 
-- [ ] **Step 2: 编译验证（需要 local.props 配好真实路径）**
+- [x] **Step 2: 编译验证（需要 local.props 配好真实路径）**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -2012,7 +2012,7 @@ dotnet build Plugin/Plugin.csproj
 
 Expected: `Build succeeded.`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
