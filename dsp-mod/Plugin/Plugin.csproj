@@ -16,6 +16,10 @@
   </Target>
 
   <ItemGroup>
+    <Reference Include="UnityEngine">
+      <HintPath>$(DspManagedDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>$(DspManagedDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
