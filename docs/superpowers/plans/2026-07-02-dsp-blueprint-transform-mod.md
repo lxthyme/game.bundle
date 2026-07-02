@@ -1203,7 +1203,7 @@ git commit -m "feat(dsp-mod): 移植建筑翻转元数据表"
 
 固定测试用蓝图（对应下方所有 Task 6/7/8 测试共用）：1 个 area（`size={3,3}`），2 个 building：`{index:0, itemId:2001(传送带), localOffset:[{0.5,0.5,0},{0.5,0.5,0}], yaw:[90,90]}`，`{index:1, itemId:2303(制造台), localOffset:[{-1.5,2.25,0},{-1.5,2.25,0}], yaw:[0,0], recipeId:15}`。该固定蓝图和以下期望值均由真实 `Home.vue` 的 `horizontalOffset`/`verticalOffset`/`linearTransformation` 函数在 Node 环境下对同一份数据实际跑出。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 创建 `dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs`：
 
@@ -1260,7 +1260,7 @@ namespace DspBlueprintTransform.Blueprint.Tests
 }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1269,7 +1269,7 @@ dotnet test Blueprint.Tests --filter BlueprintTransformTests
 
 Expected: 编译失败（找不到 `BlueprintTransform`）。
 
-- [ ] **Step 3: 实现 HorizontalOffset**
+- [x] **Step 3: 实现 HorizontalOffset**
 
 创建 `dsp-mod/Blueprint/BlueprintTransform.cs`：
 
@@ -1294,7 +1294,7 @@ namespace DspBlueprintTransform.Blueprint
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1303,7 +1303,7 @@ dotnet test Blueprint.Tests --filter BlueprintTransformTests
 
 Expected: PASS。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
