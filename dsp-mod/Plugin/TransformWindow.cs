@@ -105,7 +105,8 @@ namespace DspBlueprintTransform.Plugin
             double z = ParseOrZero(_offsetZ);
             var afterHorizontal = BlueprintTransform.HorizontalOffset(_parsed!, x, y);
             var afterVertical = BlueprintTransform.VerticalOffset(afterHorizontal, z);
-            Finish(afterVertical);
+            bool addedBase = afterVertical.Buildings.Count > afterHorizontal.Buildings.Count;
+            Finish(afterVertical, addedBase ? "检测到悬空建筑，已自动加地基" : null);
         }
 
         private void ApplyLinearTransformationFromFields()
@@ -132,12 +133,14 @@ namespace DspBlueprintTransform.Plugin
             return false;
         }
 
-        private void Finish(BlueprintData result)
+        private void Finish(BlueprintData result, string? extraNote = null)
         {
             _parsed = result;
             _outputCode = BlueprintParser.ToStr(result);
             GUIUtility.systemCopyBuffer = _outputCode;
             _statusMessage = "已应用变换并复制到剪贴板";
+            if (!string.IsNullOrEmpty(extraNote))
+                _statusMessage += $"（{extraNote}）";
             _statusIsError = false;
         }
 
