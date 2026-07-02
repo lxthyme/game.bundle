@@ -31,7 +31,7 @@
 **Interfaces:**
 - Produces: 一个能跑 `dotnet test` 的空解决方案，后续任务在 `Blueprint/` 下加代码、在 `Blueprint.Tests/` 下加测试。
 
-- [ ] **Step 1: 安装 dotnet SDK**
+- [x] **Step 1: 安装 dotnet SDK**
 
 ```bash
 brew install --cask dotnet-sdk
@@ -40,7 +40,7 @@ dotnet --version
 
 Expected: 输出一个 `8.x` 或更高的版本号。
 
-- [ ] **Step 2: 创建 Blueprint 核心库工程**
+- [x] **Step 2: 创建 Blueprint 核心库工程**
 
 ```bash
 mkdir -p "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -49,7 +49,7 @@ dotnet new classlib -n Blueprint -o Blueprint --framework netstandard2.0
 rm Blueprint/Class1.cs
 ```
 
-- [ ] **Step 3: 创建测试工程并建立引用**
+- [x] **Step 3: 创建测试工程并建立引用**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -58,7 +58,7 @@ rm Blueprint.Tests/UnitTest1.cs
 dotnet add Blueprint.Tests reference Blueprint/Blueprint.csproj
 ```
 
-- [ ] **Step 4: 创建解决方案并加入工程**
+- [x] **Step 4: 创建解决方案并加入工程**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -66,7 +66,7 @@ dotnet new sln -n DspBlueprintTransform
 dotnet sln add Blueprint/Blueprint.csproj Blueprint.Tests/Blueprint.Tests.csproj
 ```
 
-- [ ] **Step 5: 加 .gitignore**
+- [x] **Step 5: 加 .gitignore**
 
 写入 `dsp-mod/.gitignore`：
 
@@ -76,7 +76,7 @@ obj/
 local.props
 ```
 
-- [ ] **Step 6: 验证空解决方案可构建**
+- [x] **Step 6: 验证空解决方案可构建**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -85,7 +85,7 @@ dotnet build DspBlueprintTransform.sln
 
 Expected: `Build succeeded.`（此时 `Blueprint.Tests` 里还没有任何测试文件，属正常）
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
