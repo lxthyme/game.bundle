@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>DspBlueprintTransform</AssemblyName>
+    <RootNamespace>DspBlueprintTransform.Plugin</RootNamespace>
+  </PropertyGroup>
+
+  <Import Project="..\local.props" Condition="Exists('..\local.props')" />
+
+  <Target Name="EnsureLocalProps" BeforeTargets="Build">
+    <Error Condition="'$(DspManagedDir)' == ''"
+           Text="缺少 dsp-mod/local.props：请复制 local.props.example 为 local.props，并填入 DSP 游戏的 DSPGAME_Data/Managed 目录路径。" />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(DspManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(DspManagedDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(DspManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>..\..\3rd\BepInEx\BepInEx_win_x64_5.4.23.5\BepInEx\core\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\3rd\BepInEx\BepInEx_win_x64_5.4.23.5\BepInEx\core\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Blueprint\Blueprint.csproj" />
+  </ItemGroup>
+
+</Project>

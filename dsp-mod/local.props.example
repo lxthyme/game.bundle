@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- 复制为同目录下的 local.props（已在 .gitignore 里排除），
+         改成你机器上 DSP 游戏的 DSPGAME_Data/Managed 目录实际路径 -->
+    <DspManagedDir>C:\Path\To\SteamLibrary\steamapps\common\Dyson Sphere Program\DSPGAME_Data\Managed</DspManagedDir>
+  </PropertyGroup>
+</Project>

@@ -1695,7 +1695,7 @@ git commit -m "feat(dsp-mod): 实现线性变换(缩放/翻转/旋转)"
 
 **前置条件（阻塞点）**：需要 Windows 游戏机上 `DSP 安装目录/DSPGAME_Data/Managed/` 的路径，本设计不需要 `Assembly-CSharp.dll`，只需要通用 `UnityEngine.*.dll`。如果当前机器还没有这份目录（比如需要从 Windows 机器拷贝或建共享），先完成本任务的代码编写，**编译验证步骤（Step 4）留到拿到 DLL 后再跑**，不要因为编译不过而回退已写好的代码。
 
-- [ ] **Step 1: 创建 local.props 模板**
+- [x] **Step 1: 创建 local.props 模板**
 
 创建 `dsp-mod/local.props.example`（提交到 git，作为团队协作的模板）：
 
@@ -1715,7 +1715,7 @@ cp local.props.example local.props
 # 然后手动编辑 local.props，把 DspManagedDir 改成你机器上的真实路径
 ```
 
-- [ ] **Step 2: 创建 Plugin 工程**
+- [x] **Step 2: 创建 Plugin 工程**
 
 创建 `dsp-mod/Plugin/Plugin.csproj`：
 
@@ -1767,7 +1767,7 @@ cp local.props.example local.props
 </Project>
 ```
 
-- [ ] **Step 3: 写 Plugin 入口**
+- [x] **Step 3: 写 Plugin 入口**
 
 创建 `dsp-mod/Plugin/Plugin.cs`：
 
@@ -1818,7 +1818,7 @@ cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
 dotnet sln add Plugin/Plugin.csproj
 ```
 
-- [ ] **Step 4: 编译验证（需要 local.props 配好真实路径后才能跑通）**
+- [x] **Step 4: 编译验证（需要 local.props 配好真实路径后才能跑通）**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1828,7 +1828,7 @@ dotnet build Plugin/Plugin.csproj
 Expected（`local.props` 未配置时）：MSBuild 报错 `缺少 dsp-mod/local.props...`，这是预期行为，说明前置条件检查生效。
 Expected（`local.props` 配置了真实 `DspManagedDir` 后）：`Build succeeded.`（此时 `TransformWindow` 还不存在，会在 Task 10 补上——如果 Task 9/10 是连续执行，可以先跳过本步骤的最终验证，等 Task 10 完成后一起编译）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"
