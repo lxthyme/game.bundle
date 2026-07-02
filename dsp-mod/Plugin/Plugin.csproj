@@ -10,7 +10,7 @@
 
   <Import Project="..\local.props" Condition="Exists('..\local.props')" />
 
-  <Target Name="EnsureLocalProps" BeforeTargets="Build">
+  <Target Name="EnsureLocalProps" BeforeTargets="BeforeBuild">
     <Error Condition="'$(DspManagedDir)' == ''"
            Text="缺少 dsp-mod/local.props：请复制 local.props.example 为 local.props，并填入 DSP 游戏的 DSPGAME_Data/Managed 目录路径。" />
   </Target>
