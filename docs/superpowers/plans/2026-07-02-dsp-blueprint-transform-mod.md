@@ -1476,7 +1476,7 @@ git commit -m "feat(dsp-mod): 实现垂直偏移变换(含卡地基浮空)"
 - Consumes: `BuildingMeta.*`（Task 5）。
 - Produces: `BlueprintTransform.LinearTransformation(BlueprintData, double zoomX, double zoomY, double rotateDeg) -> BlueprintData`，供 UI（Task 10）的"横向翻转/纵向翻转/线性变换"调用（翻转就是 `zoomX`或`zoomY`传 `-1`，`rotate`传 `0`）。
 
-- [ ] **Step 1: 写失败的测试**
+- [x] **Step 1: 写失败的测试**
 
 在 `dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs` 里追加：
 
@@ -1525,7 +1525,7 @@ git commit -m "feat(dsp-mod): 实现垂直偏移变换(含卡地基浮空)"
         }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1534,7 +1534,7 @@ dotnet test Blueprint.Tests --filter LinearTransformation
 
 Expected: 编译失败（找不到 `LinearTransformation`）。
 
-- [ ] **Step 3: 实现 LinearTransformation**
+- [x] **Step 3: 实现 LinearTransformation**
 
 在 `dsp-mod/Blueprint/BlueprintTransform.cs` 的 `BlueprintTransform` 类里追加：
 
@@ -1661,7 +1661,7 @@ Expected: 编译失败（找不到 `LinearTransformation`）。
         }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp/dsp-mod"
@@ -1670,7 +1670,7 @@ dotnet test Blueprint.Tests
 
 Expected: 全部测试（Task 2-8 累计）PASS。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 cd "/Users/lxthyme/Desktop/Lucky/Obsidian/dsp"

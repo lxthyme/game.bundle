@@ -68,5 +68,48 @@ namespace DspBlueprintTransform.Blueprint.Tests
             Assert.Equal(1, result.Buildings[1].Index);
             Assert.Equal(2, result.Buildings[2].Index);
         }
+
+        [Fact]
+        public void LinearTransformation_ScaleAndRotate_MatchesReferenceOutput()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.LinearTransformation(bp, 2, 1, 45);
+
+            Assert.Equal(7, result.Areas[0].Size.X);
+            Assert.Equal(7, result.Areas[0].Size.Y);
+            Assert.Equal(7, result.DragBoxSize.X);
+            Assert.Equal(7, result.DragBoxSize.Y);
+            Assert.Equal(3, result.CursorOffset.X);
+            Assert.Equal(3, result.CursorOffset.Y);
+
+            Assert.Equal(0.35355339059327384, result.Buildings[0].LocalOffset[0].X, 10);
+            Assert.Equal(1.0606601717798212, result.Buildings[0].LocalOffset[0].Y, 10);
+            Assert.Equal(45, result.Buildings[0].Yaw[0], 6);
+
+            Assert.Equal(-3.7123106012293747, result.Buildings[1].LocalOffset[0].X, 10);
+            Assert.Equal(-0.5303300858899103, result.Buildings[1].LocalOffset[0].Y, 10);
+            Assert.Equal(-45, result.Buildings[1].Yaw[0], 6);
+        }
+
+        [Fact]
+        public void LinearTransformation_HorizontalFlip_MatchesReferenceOutput()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.LinearTransformation(bp, -1, 1, 0);
+
+            Assert.Equal(3, result.Areas[0].Size.X);
+            Assert.Equal(3, result.Areas[0].Size.Y);
+
+            // 传送带(2001)：横向翻转后 x 取反，朝向取反，倾斜角取反
+            Assert.Equal(-0.5, result.Buildings[0].LocalOffset[0].X, 6);
+            Assert.Equal(0.5, result.Buildings[0].LocalOffset[0].Y, 6);
+            Assert.Equal(-90, result.Buildings[0].Yaw[0], 6);
+            Assert.Equal(0, result.Buildings[0].Tilt, 6);
+
+            // 制造台(2303)：横向翻转后 x 取反，朝向取反(0 保持 0)
+            Assert.Equal(1.5, result.Buildings[1].LocalOffset[0].X, 6);
+            Assert.Equal(2.25, result.Buildings[1].LocalOffset[0].Y, 6);
+            Assert.Equal(0, result.Buildings[1].Yaw[0], 6);
+        }
     }
 }
