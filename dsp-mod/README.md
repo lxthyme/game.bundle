@@ -10,6 +10,16 @@
    `DSP 安装目录/DSPGAME_Data/Managed` 的实际路径（需要从装有游戏的 Windows 机器拷贝这个目录，
    或者建立局域网共享）
 
+## BepInEx 依赖
+
+`Plugin.csproj` 通过硬编码相对路径引用 `BepInEx.dll` / `0Harmony.dll`，需要仓库根目录下存在
+`3rd/BepInEx/BepInEx_win_x64_5.4.23.5/BepInEx/core/`（含这两个 DLL）。该目录不随仓库提交（已加入
+`.gitignore`），需要自行下载：
+
+1. 前往 [BepInEx releases](https://github.com/BepInEx/BepInEx/releases)，下载 `5.4.23.5` 版本的
+   `BepInEx_win_x64_5.4.23.5.zip`
+2. 解压到仓库根目录 `3rd/BepInEx/BepInEx_win_x64_5.4.23.5/`
+
 ## 构建
 
 ```bash
