@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 using DspBlueprintTransform.Blueprint;
 
@@ -15,11 +16,20 @@ namespace DspBlueprintTransform.Plugin
         private string _offsetX = "0";
         private string _offsetY = "0";
         private string _offsetZ = "0";
+        private string _offsetIndex = "";
         private string _zoomX = "1";
         private string _zoomY = "1";
         private string _rotate = "0";
 
         private BlueprintData? _parsed;
+
+        private const float TextAreaMaxWidth = 390f;
+
+        private void OnEnable()
+        {
+            if (string.IsNullOrEmpty(_inputCode))
+                _inputCode = GUIUtility.systemCopyBuffer;
+        }
 
         private void OnGUI()
         {
@@ -29,7 +39,7 @@ namespace DspBlueprintTransform.Plugin
         private void DrawWindow(int id)
         {
             GUILayout.Label("蓝图码（粘贴或从剪贴板读取）");
-            _inputCode = GUILayout.TextArea(_inputCode, GUILayout.Height(80));
+            _inputCode = GUILayout.TextArea(_inputCode, GUILayout.Height(80), GUILayout.Width(TextAreaMaxWidth));
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("从剪贴板读取")) _inputCode = GUIUtility.systemCopyBuffer;
@@ -49,6 +59,7 @@ namespace DspBlueprintTransform.Plugin
             DrawLabeledField("横向偏移 X", ref _offsetX);
             DrawLabeledField("纵向偏移 Y", ref _offsetY);
             DrawLabeledField("垂直偏移 Z", ref _offsetZ);
+            DrawLabeledField("传送带序号(留空=全部)", ref _offsetIndex);
             if (GUILayout.Button("应用坐标偏移")) ApplyOffset();
 
             GUILayout.Space(8);
@@ -67,7 +78,7 @@ namespace DspBlueprintTransform.Plugin
 
             GUILayout.Space(8);
             GUILayout.Label("输出蓝图码");
-            GUILayout.TextArea(_outputCode, GUILayout.Height(80));
+            GUILayout.TextArea(_outputCode, GUILayout.Height(80), GUILayout.Width(TextAreaMaxWidth));
             if (GUILayout.Button("复制到剪贴板")) GUIUtility.systemCopyBuffer = _outputCode;
 
             GUI.DragWindow();
@@ -100,19 +111,43 @@ namespace DspBlueprintTransform.Plugin
         private void ApplyOffset()
         {
             if (!EnsureParsed()) return;
+
+            int targetIndex = -1;
+            if (!string.IsNullOrWhiteSpace(_offsetIndex))
+            {
+                if (!IsBeltOnlySmall())
+                {
+                    _statusMessage = "仅当蓝图全部为传送带且数量小于 20 时可指定序号";
+                    _statusIsError = true;
+                    return;
+                }
+                if (!int.TryParse(_offsetIndex, out targetIndex) || targetIndex < 0 || targetIndex >= _parsed!.Buildings.Count)
+                {
+                    _statusMessage = "传送带序号无效";
+                    _statusIsError = true;
+                    return;
+                }
+            }
+
             double x = ParseOrZero(_offsetX);
             double y = ParseOrZero(_offsetY);
             double z = ParseOrZero(_offsetZ);
-            var afterHorizontal = BlueprintTransform.HorizontalOffset(_parsed!, x, y);
+            var afterHorizontal = BlueprintTransform.HorizontalOffset(_parsed!, x, y, targetIndex);
             if (z == 0)
             {
                 Finish(afterHorizontal);
                 return;
             }
-            var afterVertical = BlueprintTransform.VerticalOffset(afterHorizontal, z);
+            var afterVertical = BlueprintTransform.VerticalOffset(afterHorizontal, z, targetIndex);
             bool addedBase = afterVertical.Buildings.Count > afterHorizontal.Buildings.Count;
             Finish(afterVertical, addedBase ? "检测到悬空建筑，已自动加地基" : null);
         }
+
+        private bool IsBeltOnlySmall()
+            => _parsed != null
+               && _parsed.Buildings.Count > 0
+               && _parsed.Buildings.Count < 20
+               && _parsed.Buildings.All(b => BuildingMeta.IsBelt(b.ItemId));
 
         private void ApplyLinearTransformationFromFields()
         {

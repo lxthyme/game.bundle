@@ -2,11 +2,12 @@ namespace DspBlueprintTransform.Blueprint
 {
     public static class BlueprintTransform
     {
-        public static BlueprintData HorizontalOffset(BlueprintData bp, double offsetX, double offsetY)
+        public static BlueprintData HorizontalOffset(BlueprintData bp, double offsetX, double offsetY, int targetIndex = -1)
         {
             var res = bp.Clone();
             foreach (var b in res.Buildings)
             {
+                if (targetIndex >= 0 && b.Index != targetIndex) continue;
                 b.LocalOffset[0].X += offsetX;
                 b.LocalOffset[1].X += offsetX;
                 b.LocalOffset[0].Y += offsetY;
@@ -15,7 +16,7 @@ namespace DspBlueprintTransform.Blueprint
             return res;
         }
 
-        public static BlueprintData VerticalOffset(BlueprintData bp, double offsetZ)
+        public static BlueprintData VerticalOffset(BlueprintData bp, double offsetZ, int targetIndex = -1)
         {
             var res = bp.Clone();
             bool needBase = false;
@@ -24,26 +25,29 @@ namespace DspBlueprintTransform.Blueprint
 
             foreach (var v in res.Buildings)
             {
-                v.LocalOffset[0].Z += offsetZ;
-                v.LocalOffset[1].Z += offsetZ;
+                if (targetIndex < 0 || v.Index == targetIndex)
+                {
+                    v.LocalOffset[0].Z += offsetZ;
+                    v.LocalOffset[1].Z += offsetZ;
 
-                if (v.ItemId == 1131)
-                {
-                    v.LocalOffset[0].Z = -10;
-                    v.LocalOffset[1].Z = -10;
-                }
-                else if ((v.LocalOffset[0].Z > 0.22 || v.LocalOffset[1].Z > 0.22)
-                         && v.InputObjIdx == -1
-                         && !BuildingMeta.IsHanging(v.ItemId))
-                {
-                    v.InputObjIdx = res.Buildings.Count; // 卡浮空，底指向即将追加的地基
-                    needBase = true;
-                    if (BuildingMeta.IsInserterSlotBuild(v.ItemId))
+                    if (v.ItemId == 1131)
                     {
-                        // 卡浮空的建筑如果先建分拣器会导致输出端连接失效，挪到最前面确保比分拣器先创建
-                        newBuildings.Insert(0, v);
-                        changeIndex = true;
-                        continue;
+                        v.LocalOffset[0].Z = -10;
+                        v.LocalOffset[1].Z = -10;
+                    }
+                    else if ((v.LocalOffset[0].Z > 0.22 || v.LocalOffset[1].Z > 0.22)
+                             && v.InputObjIdx == -1
+                             && !BuildingMeta.IsHanging(v.ItemId))
+                    {
+                        v.InputObjIdx = res.Buildings.Count; // 卡浮空，底指向即将追加的地基
+                        needBase = true;
+                        if (BuildingMeta.IsInserterSlotBuild(v.ItemId))
+                        {
+                            // 卡浮空的建筑如果先建分拣器会导致输出端连接失效，挪到最前面确保比分拣器先创建
+                            newBuildings.Insert(0, v);
+                            changeIndex = true;
+                            continue;
+                        }
                     }
                 }
                 newBuildings.Add(v);

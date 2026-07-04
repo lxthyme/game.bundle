@@ -142,6 +142,36 @@ namespace DspBlueprintTransform.Blueprint.Tests
         }
 
         [Fact]
+        public void HorizontalOffset_WithTargetIndex_OnlyMovesThatBuilding()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.HorizontalOffset(bp, 5, -3, targetIndex: 0);
+
+            Assert.Equal(5.5, result.Buildings[0].LocalOffset[0].X, 4);
+            Assert.Equal(-2.5, result.Buildings[0].LocalOffset[0].Y, 4);
+
+            // 未指定的建筑保持原样
+            Assert.Equal(-1.5, result.Buildings[1].LocalOffset[0].X, 4);
+            Assert.Equal(2.25, result.Buildings[1].LocalOffset[0].Y, 4);
+        }
+
+        [Fact]
+        public void VerticalOffset_WithTargetIndex_OnlyLiftsThatBuildingAndStillAddsBaseIfNeeded()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.VerticalOffset(bp, 2, targetIndex: 1);
+
+            // 只有 index 1（制造台 2303）被抬升，触发悬空检测并补地基；
+            // 2303 带分拣器插槽，需挪到最前面（与全量抬升时的重排规则一致）
+            Assert.Equal(3, result.Buildings.Count);
+            Assert.Equal(2303, result.Buildings[0].ItemId);
+            Assert.Equal(2, result.Buildings[0].LocalOffset[0].Z, 4);
+            Assert.Equal(2001, result.Buildings[1].ItemId);
+            Assert.Equal(0, result.Buildings[1].LocalOffset[0].Z, 4); // 未指定的建筑 Z 不变
+            Assert.Equal(1131, result.Buildings[2].ItemId);
+        }
+
+        [Fact]
         public void LinearTransformation_OnPreviouslyOffsetBlueprint_PreservesConnectionIndices()
         {
             var bp = BuildFixture();
