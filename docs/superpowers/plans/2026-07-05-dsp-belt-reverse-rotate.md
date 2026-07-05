@@ -270,7 +270,7 @@ git commit -m "feat(dsp-mod): 新增传送带原地转向 RotateInPlace"
 - Consumes：Task 1 的 `BlueprintTransform.ReverseBeltDirection(BlueprintData, HashSet<int>?)`、Task 2 的 `BlueprintTransform.RotateInPlace(BlueprintData, double, HashSet<int>?)`；现有 `IsBeltOnlySmall()`（`TransformWindow.cs:343`）、`ParseBeltIndices(string)`（`TransformWindow.cs:433`）、`ParseOrZero(string, double)`（`TransformWindow.cs:430`）。
 - Produces：无新公开接口（`TransformWindow` 是 UI 层终端，无下游任务消费）。
 
-- [ ] **Step 1: 新增字段**
+- [x] **Step 1: 新增字段**
 
 在 `dsp-mod/Plugin/TransformWindow.cs` 第 37 行 `private string _offsetIndex = "";` 之后插入：
 
@@ -279,7 +279,7 @@ git commit -m "feat(dsp-mod): 新增传送带原地转向 RotateInPlace"
         private string _beltRotate = "0";
 ```
 
-- [ ] **Step 2: 新增 UI 控件**
+- [x] **Step 2: 新增 UI 控件**
 
 将第 285-289 行的传送带序号区块：
 
@@ -304,7 +304,7 @@ git commit -m "feat(dsp-mod): 新增传送带原地转向 RotateInPlace"
             GUILayout.EndHorizontal();
 ```
 
-- [ ] **Step 3: 更新 ApplyAll 校验与执行顺序**
+- [x] **Step 3: 更新 ApplyAll 校验与执行顺序**
 
 将第 371-377 行的校验分支：
 
@@ -342,7 +342,7 @@ git commit -m "feat(dsp-mod): 新增传送带原地转向 RotateInPlace"
                 data = BlueprintTransform.RotateInPlace(data, beltRotateDeg, indices);
 ```
 
-- [ ] **Step 4: 更新 ResetAll**
+- [x] **Step 4: 更新 ResetAll**
 
 `_offsetIndex = "";` 在文件里出现两处（字段声明和 `ResetAll` 方法体），必须带上下文精确定位 `ResetAll`（第 413-428 行）里的那一处。将：
 
@@ -362,12 +362,12 @@ git commit -m "feat(dsp-mod): 新增传送带原地转向 RotateInPlace"
             _flipH = false;
 ```
 
-- [ ] **Step 5: 编译验证**
+- [x] **Step 5: 编译验证**
 
 Run: `cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod/dsp-mod && dotnet build Plugin/Plugin.csproj`
 Expected: `Build succeeded. 0 Warning(s) 0 Error(s)`
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod

@@ -35,6 +35,8 @@ namespace DspBlueprintTransform.Plugin
         private string _offsetY = "0";
         private string _offsetZ = "0";
         private string _offsetIndex = "";
+        private bool _beltReverse = false;
+        private string _beltRotate = "0";
         private string _zoomX = "1";
         private string _zoomY = "1";
         private string _rotate = "0";
@@ -286,6 +288,9 @@ namespace DspBlueprintTransform.Plugin
             GUILayout.BeginHorizontal();
             GUILayout.Label("传送带序号(留空=全部)", GUILayout.Width(150));
             _offsetIndex = GUILayout.TextField(_offsetIndex);
+            _beltReverse = GUILayout.Toggle(_beltReverse, "反转方向", GUILayout.Width(70));
+            GUILayout.Label("转向", GUILayout.Width(30));
+            _beltRotate = GUILayout.TextField(_beltRotate, GUILayout.Width(50));
             GUILayout.EndHorizontal();
 
             GUILayout.Space(4);
@@ -369,9 +374,11 @@ namespace DspBlueprintTransform.Plugin
             _statusMessage = "";
 
             var indices = ParseBeltIndices(_offsetIndex);
-            if (indices != null && !IsBeltOnlySmall())
+            double beltRotateDeg = ParseOrZero(_beltRotate);
+            bool usesBeltOnlyFeature = indices != null || _beltReverse || beltRotateDeg != 0;
+            if (usesBeltOnlyFeature && !IsBeltOnlySmall())
             {
-                _statusMessage = "仅当蓝图全部为传送带且数量小于 20 时可指定序号";
+                _statusMessage = "仅当蓝图全部为传送带且数量小于 20 时可指定序号/反转方向/转向";
                 _statusIsError = true;
                 return;
             }
@@ -389,6 +396,11 @@ namespace DspBlueprintTransform.Plugin
                     _statusMessage = "检测到悬空建筑，已自动加地基";
                 data = afterVert;
             }
+
+            if (_beltReverse)
+                data = BlueprintTransform.ReverseBeltDirection(data, indices);
+            if (beltRotateDeg != 0)
+                data = BlueprintTransform.RotateInPlace(data, beltRotateDeg, indices);
 
             if (_flipH || _flipV)
             {
@@ -416,6 +428,8 @@ namespace DspBlueprintTransform.Plugin
             _offsetY = "0";
             _offsetZ = "0";
             _offsetIndex = "";
+            _beltReverse = false;
+            _beltRotate = "0";
             _flipH = false;
             _flipV = false;
             _zoomX = "1";
