@@ -191,10 +191,12 @@ namespace DspBlueprintTransform.Plugin
 
             // ---- 蓝图码输入 ----
             GUILayout.Label("蓝图码（粘贴或从剪贴板读取）");
+            var prevInput = _inputCode;
             _inputCode = GUILayout.TextArea(_inputCode, GUILayout.Height(TextAreaHeight), GUILayout.Width(TextAreaWidth));
+            if (_inputCode != prevInput) ResetAll();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("从剪贴板读取")) _inputCode = GUIUtility.systemCopyBuffer;
+            if (GUILayout.Button("从剪贴板读取")) { _inputCode = GUIUtility.systemCopyBuffer; ResetAll(); }
             if (GUILayout.Button("解析")) TryParse();
             GUILayout.EndHorizontal();
 
