@@ -40,18 +40,6 @@ namespace DspBlueprintTransform.Plugin
         private bool _flipH = false;
         private bool _flipV = false;
 
-        // 脏状态基线快照（包含蓝图码，任一变更即触发重新执行）
-        private string _baselineInputCode = "";
-        private string _baselineOffsetX = "0";
-        private string _baselineOffsetY = "0";
-        private string _baselineOffsetZ = "0";
-        private string _baselineOffsetIndex = "";
-        private bool _baselineFlipH = false;
-        private bool _baselineFlipV = false;
-        private string _baselineZoomX = "1";
-        private string _baselineZoomY = "1";
-        private string _baselineRotate = "0";
-
         private BlueprintData? _originalParsed;
 
         // 双击标题栏时窗口恢复到的宽高，可由用户在窗口顶部的文本框里自行设置
@@ -74,6 +62,7 @@ namespace DspBlueprintTransform.Plugin
 
         private void OnGUI()
         {
+            GUI.backgroundColor = Color.white;
             HandleResize();
             // 必须显式传入 Width/Height，否则 GUILayout.Window 会按内容自动计算尺寸，
             // 把拖角/双击/设置按钮刚设好的 _windowRect 宽高覆盖掉
@@ -274,7 +263,6 @@ namespace DspBlueprintTransform.Plugin
                 _originalParsed = BlueprintParser.FromStr(_inputCode);
                 _statusMessage = $"解析成功：{_originalParsed.Buildings.Count} 个建筑";
                 _statusIsError = false;
-                CaptureBaseline();
             }
             catch (Exception ex)
             {
@@ -292,36 +280,25 @@ namespace DspBlueprintTransform.Plugin
 
         private void ApplyAll()
         {
-            // 蓝图码变化时自动重新解析
-            if (_inputCode != _baselineInputCode)
+            if (string.IsNullOrEmpty(_inputCode))
             {
-                try
-                {
-                    _originalParsed = BlueprintParser.FromStr(_inputCode);
-                }
-                catch (Exception ex)
-                {
-                    _statusMessage = $"解析失败：{ex.Message}";
-                    _statusIsError = true;
-                    return;
-                }
+                _statusMessage = "请先粘贴蓝图码";
+                _statusIsError = true;
+                return;
             }
 
-            if (_originalParsed == null)
+            try
             {
-                _statusMessage = "请先粘贴蓝图码并点击「解析」";
+                _originalParsed = BlueprintParser.FromStr(_inputCode);
+            }
+            catch (Exception ex)
+            {
+                _statusMessage = $"解析失败：{ex.Message}";
                 _statusIsError = true;
                 return;
             }
 
             _statusMessage = "";
-
-            if (!IsAnyDirty())
-            {
-                _statusMessage = "无变更";
-                _statusIsError = true;
-                return;
-            }
 
             var indices = ParseBeltIndices(_offsetIndex);
             if (indices != null && !IsBeltOnlySmall())
@@ -331,7 +308,6 @@ namespace DspBlueprintTransform.Plugin
                 return;
             }
 
-            // 每次从原始蓝图出发，应用全部参数
             var data = _originalParsed.Clone();
 
             double ox = ParseOrZero(_offsetX);
@@ -346,23 +322,24 @@ namespace DspBlueprintTransform.Plugin
                 data = afterVert;
             }
 
-            double zx = _flipH ? -1 : 1;
-            double zy = _flipV ? -1 : 1;
-            double zr = ParseOrZero(_rotate, 0);
             if (_flipH || _flipV)
+            {
+                double zx = _flipH ? -1 : 1;
+                double zy = _flipV ? -1 : 1;
                 data = BlueprintTransform.LinearTransformation(data, zx, zy, 0);
+            }
 
             double lx = ParseOrZero(_zoomX, 1);
             double ly = ParseOrZero(_zoomY, 1);
-            if (lx != 1 || ly != 1 || zr != 0)
-                data = BlueprintTransform.LinearTransformation(data, lx, ly, zr);
+            double lr = ParseOrZero(_rotate, 0);
+            if (lx != 1 || ly != 1 || lr != 0)
+                data = BlueprintTransform.LinearTransformation(data, lx, ly, lr);
 
             _outputCode = BlueprintParser.ToStr(data);
             GUIUtility.systemCopyBuffer = _outputCode;
             if (string.IsNullOrEmpty(_statusMessage))
                 _statusMessage = "已应用变换并复制到剪贴板";
             _statusIsError = false;
-            CaptureBaseline();
         }
 
         private void ResetAll()
@@ -380,7 +357,6 @@ namespace DspBlueprintTransform.Plugin
             _statusMessage = "";
             _statusIsError = false;
             _originalParsed = null;
-            CaptureBaseline();
         }
 
         private static double ParseOrZero(string s, double fallback = 0)
@@ -398,30 +374,5 @@ namespace DspBlueprintTransform.Plugin
             return set.Count > 0 ? set : null;
         }
 
-        private void CaptureBaseline()
-        {
-            _baselineInputCode = _inputCode;
-            _baselineOffsetX = _offsetX;
-            _baselineOffsetY = _offsetY;
-            _baselineOffsetZ = _offsetZ;
-            _baselineOffsetIndex = _offsetIndex;
-            _baselineFlipH = _flipH;
-            _baselineFlipV = _flipV;
-            _baselineZoomX = _zoomX;
-            _baselineZoomY = _zoomY;
-            _baselineRotate = _rotate;
-        }
-
-        private bool IsAnyDirty()
-            => _inputCode != _baselineInputCode
-            || _offsetX != _baselineOffsetX
-            || _offsetY != _baselineOffsetY
-            || _offsetZ != _baselineOffsetZ
-            || _offsetIndex != _baselineOffsetIndex
-            || _flipH != _baselineFlipH
-            || _flipV != _baselineFlipV
-            || _zoomX != _baselineZoomX
-            || _zoomY != _baselineZoomY
-            || _rotate != _baselineRotate;
     }
 }
