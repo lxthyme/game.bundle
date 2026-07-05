@@ -2,12 +2,12 @@ namespace DspBlueprintTransform.Blueprint
 {
     public static class BlueprintTransform
     {
-        public static BlueprintData HorizontalOffset(BlueprintData bp, double offsetX, double offsetY, int targetIndex = -1)
+        public static BlueprintData HorizontalOffset(BlueprintData bp, double offsetX, double offsetY, System.Collections.Generic.HashSet<int>? targetIndices = null)
         {
             var res = bp.Clone();
             foreach (var b in res.Buildings)
             {
-                if (targetIndex >= 0 && b.Index != targetIndex) continue;
+                if (targetIndices != null && !targetIndices.Contains(b.Index)) continue;
                 b.LocalOffset[0].X += offsetX;
                 b.LocalOffset[1].X += offsetX;
                 b.LocalOffset[0].Y += offsetY;
@@ -16,7 +16,7 @@ namespace DspBlueprintTransform.Blueprint
             return res;
         }
 
-        public static BlueprintData VerticalOffset(BlueprintData bp, double offsetZ, int targetIndex = -1)
+        public static BlueprintData VerticalOffset(BlueprintData bp, double offsetZ, System.Collections.Generic.HashSet<int>? targetIndices = null)
         {
             var res = bp.Clone();
             bool needBase = false;
@@ -25,7 +25,7 @@ namespace DspBlueprintTransform.Blueprint
 
             foreach (var v in res.Buildings)
             {
-                if (targetIndex < 0 || v.Index == targetIndex)
+                if (targetIndices == null || targetIndices.Contains(v.Index))
                 {
                     v.LocalOffset[0].Z += offsetZ;
                     v.LocalOffset[1].Z += offsetZ;

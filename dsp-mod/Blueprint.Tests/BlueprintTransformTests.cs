@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Xunit;
 using DspBlueprintTransform.Blueprint;
 
@@ -145,7 +146,7 @@ namespace DspBlueprintTransform.Blueprint.Tests
         public void HorizontalOffset_WithTargetIndex_OnlyMovesThatBuilding()
         {
             var bp = BuildFixture();
-            var result = BlueprintTransform.HorizontalOffset(bp, 5, -3, targetIndex: 0);
+            var result = BlueprintTransform.HorizontalOffset(bp, 5, -3, targetIndices: new HashSet<int> { 0 });
 
             Assert.Equal(5.5, result.Buildings[0].LocalOffset[0].X, 4);
             Assert.Equal(-2.5, result.Buildings[0].LocalOffset[0].Y, 4);
@@ -159,7 +160,7 @@ namespace DspBlueprintTransform.Blueprint.Tests
         public void VerticalOffset_WithTargetIndex_OnlyLiftsThatBuildingAndStillAddsBaseIfNeeded()
         {
             var bp = BuildFixture();
-            var result = BlueprintTransform.VerticalOffset(bp, 2, targetIndex: 1);
+            var result = BlueprintTransform.VerticalOffset(bp, 2, targetIndices: new HashSet<int> { 1 });
 
             // 只有 index 1（制造台 2303）被抬升，触发悬空检测并补地基；
             // 2303 带分拣器插槽，需挪到最前面（与全量抬升时的重排规则一致）

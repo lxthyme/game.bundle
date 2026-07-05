@@ -269,13 +269,14 @@ namespace DspBlueprintTransform.Plugin
             double x = ParseOrZero(_offsetX);
             double y = ParseOrZero(_offsetY);
             double z = ParseOrZero(_offsetZ);
-            var afterHorizontal = BlueprintTransform.HorizontalOffset(_parsed!, x, y, targetIndex);
+            var targetIndices = targetIndex >= 0 ? new System.Collections.Generic.HashSet<int> { targetIndex } : null;
+            var afterHorizontal = BlueprintTransform.HorizontalOffset(_parsed!, x, y, targetIndices);
             if (z == 0)
             {
                 Finish(afterHorizontal);
                 return;
             }
-            var afterVertical = BlueprintTransform.VerticalOffset(afterHorizontal, z, targetIndex);
+            var afterVertical = BlueprintTransform.VerticalOffset(afterHorizontal, z, targetIndices);
             bool addedBase = afterVertical.Buildings.Count > afterHorizontal.Buildings.Count;
             Finish(afterVertical, addedBase ? "检测到悬空建筑，已自动加地基" : null);
         }
