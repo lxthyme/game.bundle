@@ -194,5 +194,39 @@ namespace DspBlueprintTransform.Blueprint.Tests
             Assert.Equal(-1, result.Buildings[1].InputObjIdx);
             Assert.Equal(-1, result.Buildings[1].OutputObjIdx);
         }
+
+        [Fact]
+        public void HorizontalOffset_WithMultipleTargetIndices_OnlyMovesSpecifiedBuildings()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.HorizontalOffset(bp, 5, -3, targetIndices: new HashSet<int> { 0, 1 });
+
+            Assert.Equal(5.5, result.Buildings[0].LocalOffset[0].X, 4);
+            Assert.Equal(-2.5, result.Buildings[0].LocalOffset[0].Y, 4);
+            Assert.Equal(3.5, result.Buildings[1].LocalOffset[0].X, 4);
+            Assert.Equal(-0.75, result.Buildings[1].LocalOffset[0].Y, 4);
+        }
+
+        [Fact]
+        public void HorizontalOffset_WithEmptyTargetIndices_MovesNone()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.HorizontalOffset(bp, 5, -3, targetIndices: new HashSet<int>());
+
+            Assert.Equal(0.5, result.Buildings[0].LocalOffset[0].X, 4);
+            Assert.Equal(0.5, result.Buildings[0].LocalOffset[0].Y, 4);
+            Assert.Equal(-1.5, result.Buildings[1].LocalOffset[0].X, 4);
+            Assert.Equal(2.25, result.Buildings[1].LocalOffset[0].Y, 4);
+        }
+
+        [Fact]
+        public void HorizontalOffset_WithNullTargetIndices_MovesAll()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.HorizontalOffset(bp, 5, -3, targetIndices: null);
+
+            Assert.Equal(5.5, result.Buildings[0].LocalOffset[0].X, 4);
+            Assert.Equal(3.5, result.Buildings[1].LocalOffset[0].X, 4);
+        }
     }
 }
