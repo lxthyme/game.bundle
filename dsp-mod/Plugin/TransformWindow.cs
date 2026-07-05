@@ -15,9 +15,13 @@ namespace DspBlueprintTransform.Plugin
         private const float MinWindowHeight = 400f;
         private const float DefaultTextAreaHeight = 80f;
         private const float ResizeHandleSize = 12f;
+        private const float TitleBarHeight = 20f;
+        // 标题栏 + 窗口皮肤上下内边距的估算高度，滚动视图的可视高度 = 窗口高度 - 这部分
+        private const float ContentAreaPadding = 50f;
 
         private Rect _windowRect = new Rect(100, 100, DefaultWindowWidth, DefaultWindowHeight);
         private ResizeCorner _activeResizeCorner = ResizeCorner.None;
+        private Vector2 _scrollPos = Vector2.zero;
 
         private string _inputCode = "";
         private string _outputCode = "";
@@ -34,8 +38,16 @@ namespace DspBlueprintTransform.Plugin
 
         private BlueprintData? _parsed;
 
+        // 双击标题栏时窗口恢复到的宽高，可由用户在窗口顶部的文本框里自行设置
+        private string _defaultWidthText = "420";
+        private string _defaultHeightText = "560";
+
+        private float MaxWindowWidth => Screen.width / 2f;
+        private float MaxWindowHeight => Screen.height / 2f;
+
         // 窗口变宽/变高时，输入输出文本框跟着放大；其余控件保持原有固定尺寸
-        private float TextAreaWidth => Mathf.Max(200f, _windowRect.width - 30f);
+        // 减去的量比 ContentAreaPadding 多留一点，给滚动视图的竖直滚动条腾出空间
+        private float TextAreaWidth => Mathf.Max(200f, _windowRect.width - 45f);
         private float TextAreaHeight => DefaultTextAreaHeight + Mathf.Max(0f, _windowRect.height - DefaultWindowHeight) / 2f;
 
         private void OnEnable()
@@ -47,7 +59,11 @@ namespace DspBlueprintTransform.Plugin
         private void OnGUI()
         {
             HandleResize();
-            _windowRect = GUILayout.Window(GetInstanceID(), _windowRect, DrawWindow, "蓝图变换");
+            // 必须显式传入 Width/Height，否则 GUILayout.Window 会按内容自动计算尺寸，
+            // 把拖角/双击/设置按钮刚设好的 _windowRect 宽高覆盖掉
+            _windowRect = GUILayout.Window(
+                GetInstanceID(), _windowRect, DrawWindow, "蓝图变换",
+                GUILayout.Width(_windowRect.width), GUILayout.Height(_windowRect.height));
         }
 
         private void HandleResize()
@@ -56,6 +72,12 @@ namespace DspBlueprintTransform.Plugin
             switch (e.type)
             {
                 case EventType.MouseDown when e.button == 0:
+                    if (e.clickCount == 2 && IsInTitleBar(e.mousePosition))
+                    {
+                        ApplyDefaultWindowSize();
+                        e.Use();
+                        break;
+                    }
                     var corner = GetResizeCorner(e.mousePosition);
                     if (corner != ResizeCorner.None)
                     {
@@ -71,6 +93,17 @@ namespace DspBlueprintTransform.Plugin
                     _activeResizeCorner = ResizeCorner.None;
                     break;
             }
+        }
+
+        private bool IsInTitleBar(Vector2 mousePos)
+            => mousePos.y >= _windowRect.y && mousePos.y <= _windowRect.y + TitleBarHeight
+               && mousePos.x >= _windowRect.x && mousePos.x <= _windowRect.xMax;
+
+        private void ApplyDefaultWindowSize()
+        {
+            float width = Mathf.Clamp((float)ParseOrZero(_defaultWidthText, DefaultWindowWidth), MinWindowWidth, MaxWindowWidth);
+            float height = Mathf.Clamp((float)ParseOrZero(_defaultHeightText, DefaultWindowHeight), MinWindowHeight, MaxWindowHeight);
+            _windowRect = new Rect(_windowRect.x, _windowRect.y, width, height);
         }
 
         private ResizeCorner GetResizeCorner(Vector2 mousePos)
@@ -103,8 +136,8 @@ namespace DspBlueprintTransform.Plugin
             if (top) { newHeight -= delta.y; newY += delta.y; }
             else newHeight += delta.y;
 
-            float clampedWidth = Mathf.Max(newWidth, MinWindowWidth);
-            float clampedHeight = Mathf.Max(newHeight, MinWindowHeight);
+            float clampedWidth = Mathf.Clamp(newWidth, MinWindowWidth, MaxWindowWidth);
+            float clampedHeight = Mathf.Clamp(newHeight, MinWindowHeight, MaxWindowHeight);
             if (left) newX -= clampedWidth - newWidth;
             if (top) newY -= clampedHeight - newHeight;
 
@@ -113,6 +146,19 @@ namespace DspBlueprintTransform.Plugin
 
         private void DrawWindow(int id)
         {
+            float viewportHeight = Mathf.Max(50f, _windowRect.height - ContentAreaPadding);
+            _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(viewportHeight));
+
+            GUILayout.Label("窗口默认宽高（双击标题栏应用，或点设置立即生效）");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("宽度", GUILayout.Width(30));
+            _defaultWidthText = GUILayout.TextField(_defaultWidthText, GUILayout.Width(50));
+            GUILayout.Label("高度", GUILayout.Width(30));
+            _defaultHeightText = GUILayout.TextField(_defaultHeightText, GUILayout.Width(50));
+            if (GUILayout.Button("设置")) ApplyDefaultWindowSize();
+            GUILayout.EndHorizontal();
+            GUILayout.Space(8);
+
             GUILayout.Label("蓝图码（粘贴或从剪贴板读取）");
             _inputCode = GUILayout.TextArea(_inputCode, GUILayout.Height(TextAreaHeight), GUILayout.Width(TextAreaWidth));
 
@@ -155,6 +201,8 @@ namespace DspBlueprintTransform.Plugin
             GUILayout.Label("输出蓝图码");
             GUILayout.TextArea(_outputCode, GUILayout.Height(TextAreaHeight), GUILayout.Width(TextAreaWidth));
             if (GUILayout.Button("复制到剪贴板")) GUIUtility.systemCopyBuffer = _outputCode;
+
+            GUILayout.EndScrollView();
 
             GUI.DragWindow();
             DrawResizeHandles();
