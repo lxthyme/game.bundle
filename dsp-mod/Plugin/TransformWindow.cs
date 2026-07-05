@@ -190,11 +190,15 @@ namespace DspBlueprintTransform.Plugin
                     {
                         var corner = GetResizeCorner(e.mousePosition);
                         if (corner != ResizeCorner.None)
+                        {
                             _activeResizeCorner = corner;
+                            e.Use(); // 阻止顶部两个角落入标题栏拖拽区时被 GUI.DragWindow 同时抢占
+                        }
                     }
                     break;
                 case EventType.MouseDrag when _activeResizeCorner != ResizeCorner.None:
                     ApplyResize(e.delta);
+                    e.Use();
                     break;
                 case EventType.MouseUp:
                     if (_activeResizeCorner != ResizeCorner.None)
@@ -296,7 +300,9 @@ namespace DspBlueprintTransform.Plugin
 
             GUILayout.EndScrollView();
 
-            GUI.DragWindow();
+            // 限制在标题栏区域，且缩放进行中不调用，避免与四角缩放/双击复位抢事件
+            if (_activeResizeCorner == ResizeCorner.None)
+                GUI.DragWindow(new Rect(0, 0, _windowRect.width, TitleBarHeight));
             DrawResizeHandles();
         }
 
