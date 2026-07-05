@@ -79,6 +79,9 @@ namespace DspBlueprintTransform.Blueprint
         public List<BlueprintBuilding> Buildings = new List<BlueprintBuilding>();
         public int Patch;
 
+        // 地基/地形改造数据，原始字节透传，不解析内部结构（同 Parameters/Content，见 Global Constraints）
+        public byte[]? ReformData;
+
         public BlueprintData Clone()
         {
             var clone = new BlueprintData
@@ -101,6 +104,7 @@ namespace DspBlueprintTransform.Blueprint
                 DragBoxSize = new Vec2I { X = DragBoxSize.X, Y = DragBoxSize.Y },
                 PrimaryAreaIdx = PrimaryAreaIdx,
                 Patch = Patch,
+                ReformData = ReformData == null ? null : (byte[])ReformData.Clone(),
             };
 
             foreach (var a in Areas)

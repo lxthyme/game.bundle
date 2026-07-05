@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Xunit;
 using DspBlueprintTransform.Blueprint;
 
@@ -69,6 +70,59 @@ namespace DspBlueprintTransform.Blueprint.Tests
         {
             string tampered = GoldenFixture.Substring(0, GoldenFixture.Length - 1) + "0";
             Assert.Throws<FormatException>(() => BlueprintParser.FromStr(tampered));
+        }
+
+        [Fact]
+        public void ToStr_FromStr_RoundTripsReformDataWithoutLoss()
+        {
+            // 构造一份携带地基/地形改造数据的蓝图，验证 ToStr -> FromStr 不会丢失该数据
+            using var ms = new MemoryStream();
+            using (var w = new BinaryWriter(ms))
+            {
+                w.Write((byte)0); // 预留字段
+                w.Write(1); // rectLen
+                w.Write((byte)0); // rect 预留字段
+                w.Write((short)3); // x
+                w.Write((short)4); // y
+                w.Write((byte)2); // w
+                w.Write((byte)2); // h
+                w.Write((byte)0x21); // type/color
+                w.Write((byte)0); // areaIndex
+                w.Write((uint)0); // customReformColorMask
+                w.Write(2); // colorLen
+                w.Write((uint)1);
+                w.Write((uint)2);
+            }
+            byte[] reformData = ms.ToArray();
+
+            var bp = new BlueprintData
+            {
+                Version = 2,
+                Header = new BlueprintHeader { GameVersion = "0.10.34.28281" },
+                ReformData = reformData,
+            };
+            bp.Areas.Add(new BlueprintArea { Index = 0, ParentIndex = -1, Size = new Vec2I { X = 1, Y = 1 } });
+
+            string encoded = BlueprintParser.ToStr(bp);
+            var reDecoded = BlueprintParser.FromStr(encoded);
+
+            Assert.Equal(reformData, reDecoded.ReformData);
+        }
+
+        [Fact]
+        public void ToStr_FromStr_RoundTripsWithoutReformData()
+        {
+            var bp = new BlueprintData
+            {
+                Version = 2,
+                Header = new BlueprintHeader { GameVersion = "0.10.34.28281" },
+            };
+            bp.Areas.Add(new BlueprintArea { Index = 0, ParentIndex = -1, Size = new Vec2I { X = 1, Y = 1 } });
+
+            string encoded = BlueprintParser.ToStr(bp);
+            var reDecoded = BlueprintParser.FromStr(encoded);
+
+            Assert.Null(reDecoded.ReformData);
         }
     }
 }

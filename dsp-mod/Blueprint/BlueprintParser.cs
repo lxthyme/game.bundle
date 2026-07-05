@@ -80,7 +80,7 @@ namespace DspBlueprintTransform.Blueprint
             if (bp.Version >= 2)
             {
                 bp.Patch = r.ReadInt32();
-                r.ReadByte(); // 是否存在地基数据；本项目不解析地基，读掉这个标记字节即可
+                bp.ReformData = ReadReformData(r);
             }
 
             return bp;
@@ -125,7 +125,15 @@ namespace DspBlueprintTransform.Blueprint
                     if (bp.Version >= 2)
                     {
                         w.Write(bp.Patch);
-                        w.Write((byte)0); // 本项目不写出地基数据
+                        if (bp.ReformData != null)
+                        {
+                            w.Write((byte)1);
+                            w.Write(bp.ReformData);
+                        }
+                        else
+                        {
+                            w.Write((byte)0);
+                        }
                     }
                 }
                 rawBytes = ms.ToArray();
@@ -296,6 +304,29 @@ namespace DspBlueprintTransform.Blueprint
             {
                 w.Write(0);
             }
+        }
+
+        // 结构: 预留字节(1) + rectLen(int32) + rects(rectLen*9字节) + colorMask(uint32) + colorLen(int32) + colors(colorLen*4字节)
+        // 只需解析长度字段来定位边界，内容本身按原始字节透传（不解析矩形语义）
+        private static byte[]? ReadReformData(BinaryReader r)
+        {
+            if (r.ReadByte() == 0) return null;
+
+            long start = r.BaseStream.Position;
+            r.ReadByte(); // 预留字段
+            int rectLen = r.ReadInt32();
+            if (rectLen < 0 || rectLen > 2930400)
+                throw new FormatException("蓝图码地基数据格式非法，矩形数量超出合理范围");
+            r.ReadBytes(rectLen * 9);
+            r.ReadUInt32(); // customReformColorMask
+            int colorLen = r.ReadInt32();
+            if (colorLen < 0 || colorLen > 2930400)
+                throw new FormatException("蓝图码地基数据格式非法，颜色数量超出合理范围");
+            r.ReadBytes(colorLen * 4);
+            long end = r.BaseStream.Position;
+
+            r.BaseStream.Position = start;
+            return r.ReadBytes((int)(end - start));
         }
 
         private static byte[] Gzip(byte[] data)
