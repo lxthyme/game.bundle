@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BepInEx.Configuration;
 using UnityEngine;
 using DspBlueprintTransform.Blueprint;
 
@@ -42,9 +43,27 @@ namespace DspBlueprintTransform.Plugin
 
         private BlueprintData? _originalParsed;
 
+        private ConfigEntry<int>? _configWidth;
+        private ConfigEntry<int>? _configHeight;
+
         // 双击标题栏时窗口恢复到的宽高，可由用户在窗口顶部的文本框里自行设置
         private string _defaultWidthText = "420";
         private string _defaultHeightText = "560";
+
+        public void Init(ConfigEntry<int> widthEntry, ConfigEntry<int> heightEntry)
+        {
+            _configWidth = widthEntry;
+            _configHeight = heightEntry;
+            _defaultWidthText = widthEntry.Value.ToString();
+            _defaultHeightText = heightEntry.Value.ToString();
+            _windowRect = new Rect(_windowRect.x, _windowRect.y, widthEntry.Value, heightEntry.Value);
+        }
+
+        private void SaveWindowSize()
+        {
+            if (_configWidth != null) _configWidth.Value = (int)_windowRect.width;
+            if (_configHeight != null) _configHeight.Value = (int)_windowRect.height;
+        }
 
         private float MaxWindowWidth => Screen.width * 0.9f;
         private float MaxWindowHeight => Screen.height * 0.9f;
@@ -73,6 +92,7 @@ namespace DspBlueprintTransform.Plugin
             float width = Mathf.Clamp((float)ParseOrZero(_defaultWidthText, DefaultWindowWidth), MinWindowWidth, MaxWindowWidth);
             float height = Mathf.Clamp((float)ParseOrZero(_defaultHeightText, DefaultWindowHeight), MinWindowHeight, MaxWindowHeight);
             _windowRect = new Rect(_windowRect.x, _windowRect.y, width, height);
+            SaveWindowSize();
         }
 
         private ResizeCorner GetResizeCorner(Vector2 mousePos)
@@ -132,7 +152,11 @@ namespace DspBlueprintTransform.Plugin
                     ApplyResize(e.delta);
                     break;
                 case EventType.MouseUp:
-                    _activeResizeCorner = ResizeCorner.None;
+                    if (_activeResizeCorner != ResizeCorner.None)
+                    {
+                        _activeResizeCorner = ResizeCorner.None;
+                        SaveWindowSize();
+                    }
                     break;
             }
 
@@ -147,6 +171,7 @@ namespace DspBlueprintTransform.Plugin
             GUILayout.Label("高度", GUILayout.Width(30));
             _defaultHeightText = GUILayout.TextField(_defaultHeightText, GUILayout.Width(50));
             if (GUILayout.Button("设置")) ApplyDefaultWindowSize();
+            GUILayout.Label($"当前: {(int)_windowRect.width} × {(int)_windowRect.height}", GUILayout.Width(120));
             GUILayout.EndHorizontal();
             GUILayout.Space(8);
 
