@@ -7,7 +7,18 @@ namespace DspBlueprintTransform.Plugin
 {
     public class TransformWindow : MonoBehaviour
     {
-        private Rect _windowRect = new Rect(100, 100, 420, 560);
+        private enum ResizeCorner { None, TopLeft, TopRight, BottomLeft, BottomRight }
+
+        private const float DefaultWindowWidth = 420f;
+        private const float DefaultWindowHeight = 560f;
+        private const float MinWindowWidth = 320f;
+        private const float MinWindowHeight = 400f;
+        private const float DefaultTextAreaHeight = 80f;
+        private const float ResizeHandleSize = 12f;
+
+        private Rect _windowRect = new Rect(100, 100, DefaultWindowWidth, DefaultWindowHeight);
+        private ResizeCorner _activeResizeCorner = ResizeCorner.None;
+
         private string _inputCode = "";
         private string _outputCode = "";
         private string _statusMessage = "";
@@ -23,7 +34,9 @@ namespace DspBlueprintTransform.Plugin
 
         private BlueprintData? _parsed;
 
-        private const float TextAreaMaxWidth = 390f;
+        // 窗口变宽/变高时，输入输出文本框跟着放大；其余控件保持原有固定尺寸
+        private float TextAreaWidth => Mathf.Max(200f, _windowRect.width - 30f);
+        private float TextAreaHeight => DefaultTextAreaHeight + Mathf.Max(0f, _windowRect.height - DefaultWindowHeight) / 2f;
 
         private void OnEnable()
         {
@@ -33,13 +46,75 @@ namespace DspBlueprintTransform.Plugin
 
         private void OnGUI()
         {
+            HandleResize();
             _windowRect = GUILayout.Window(GetInstanceID(), _windowRect, DrawWindow, "蓝图变换");
+        }
+
+        private void HandleResize()
+        {
+            Event e = Event.current;
+            switch (e.type)
+            {
+                case EventType.MouseDown when e.button == 0:
+                    var corner = GetResizeCorner(e.mousePosition);
+                    if (corner != ResizeCorner.None)
+                    {
+                        _activeResizeCorner = corner;
+                        e.Use();
+                    }
+                    break;
+                case EventType.MouseDrag when _activeResizeCorner != ResizeCorner.None:
+                    ApplyResize(e.delta);
+                    e.Use();
+                    break;
+                case EventType.MouseUp:
+                    _activeResizeCorner = ResizeCorner.None;
+                    break;
+            }
+        }
+
+        private ResizeCorner GetResizeCorner(Vector2 mousePos)
+        {
+            bool nearLeft = mousePos.x >= _windowRect.x && mousePos.x <= _windowRect.x + ResizeHandleSize;
+            bool nearRight = mousePos.x <= _windowRect.xMax && mousePos.x >= _windowRect.xMax - ResizeHandleSize;
+            bool nearTop = mousePos.y >= _windowRect.y && mousePos.y <= _windowRect.y + ResizeHandleSize;
+            bool nearBottom = mousePos.y <= _windowRect.yMax && mousePos.y >= _windowRect.yMax - ResizeHandleSize;
+
+            if (nearLeft && nearTop) return ResizeCorner.TopLeft;
+            if (nearRight && nearTop) return ResizeCorner.TopRight;
+            if (nearLeft && nearBottom) return ResizeCorner.BottomLeft;
+            if (nearRight && nearBottom) return ResizeCorner.BottomRight;
+            return ResizeCorner.None;
+        }
+
+        private void ApplyResize(Vector2 delta)
+        {
+            bool left = _activeResizeCorner is ResizeCorner.TopLeft or ResizeCorner.BottomLeft;
+            bool top = _activeResizeCorner is ResizeCorner.TopLeft or ResizeCorner.TopRight;
+
+            float newX = _windowRect.x;
+            float newY = _windowRect.y;
+            float newWidth = _windowRect.width;
+            float newHeight = _windowRect.height;
+
+            if (left) { newWidth -= delta.x; newX += delta.x; }
+            else newWidth += delta.x;
+
+            if (top) { newHeight -= delta.y; newY += delta.y; }
+            else newHeight += delta.y;
+
+            float clampedWidth = Mathf.Max(newWidth, MinWindowWidth);
+            float clampedHeight = Mathf.Max(newHeight, MinWindowHeight);
+            if (left) newX -= clampedWidth - newWidth;
+            if (top) newY -= clampedHeight - newHeight;
+
+            _windowRect = new Rect(newX, newY, clampedWidth, clampedHeight);
         }
 
         private void DrawWindow(int id)
         {
             GUILayout.Label("蓝图码（粘贴或从剪贴板读取）");
-            _inputCode = GUILayout.TextArea(_inputCode, GUILayout.Height(80), GUILayout.Width(TextAreaMaxWidth));
+            _inputCode = GUILayout.TextArea(_inputCode, GUILayout.Height(TextAreaHeight), GUILayout.Width(TextAreaWidth));
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("从剪贴板读取")) _inputCode = GUIUtility.systemCopyBuffer;
@@ -78,10 +153,24 @@ namespace DspBlueprintTransform.Plugin
 
             GUILayout.Space(8);
             GUILayout.Label("输出蓝图码");
-            GUILayout.TextArea(_outputCode, GUILayout.Height(80), GUILayout.Width(TextAreaMaxWidth));
+            GUILayout.TextArea(_outputCode, GUILayout.Height(TextAreaHeight), GUILayout.Width(TextAreaWidth));
             if (GUILayout.Button("复制到剪贴板")) GUIUtility.systemCopyBuffer = _outputCode;
 
             GUI.DragWindow();
+            DrawResizeHandles();
+        }
+
+        private static readonly Color ResizeHandleColor = new Color(1f, 1f, 1f, 0.35f);
+
+        private void DrawResizeHandles()
+        {
+            Color prevColor = GUI.color;
+            GUI.color = ResizeHandleColor;
+            GUI.Box(new Rect(0, 0, ResizeHandleSize, ResizeHandleSize), GUIContent.none);
+            GUI.Box(new Rect(_windowRect.width - ResizeHandleSize, 0, ResizeHandleSize, ResizeHandleSize), GUIContent.none);
+            GUI.Box(new Rect(0, _windowRect.height - ResizeHandleSize, ResizeHandleSize, ResizeHandleSize), GUIContent.none);
+            GUI.Box(new Rect(_windowRect.width - ResizeHandleSize, _windowRect.height - ResizeHandleSize, ResizeHandleSize, ResizeHandleSize), GUIContent.none);
+            GUI.color = prevColor;
         }
 
         private static void DrawLabeledField(string label, ref string value)
