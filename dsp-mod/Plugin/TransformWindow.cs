@@ -63,46 +63,10 @@ namespace DspBlueprintTransform.Plugin
         private void OnGUI()
         {
             GUI.backgroundColor = Color.white;
-            HandleResize();
-            // 必须显式传入 Width/Height，否则 GUILayout.Window 会按内容自动计算尺寸，
-            // 把拖角/双击/设置按钮刚设好的 _windowRect 宽高覆盖掉
             _windowRect = GUILayout.Window(
                 GetInstanceID(), _windowRect, DrawWindow, "蓝图变换",
                 GUILayout.Width(_windowRect.width), GUILayout.Height(_windowRect.height));
         }
-
-        private void HandleResize()
-        {
-            Event e = Event.current;
-            switch (e.type)
-            {
-                case EventType.MouseDown when e.button == 0:
-                    if (e.clickCount == 2 && IsInTitleBar(e.mousePosition))
-                    {
-                        ApplyDefaultWindowSize();
-                        e.Use();
-                        break;
-                    }
-                    var corner = GetResizeCorner(e.mousePosition);
-                    if (corner != ResizeCorner.None)
-                    {
-                        _activeResizeCorner = corner;
-                        e.Use();
-                    }
-                    break;
-                case EventType.MouseDrag when _activeResizeCorner != ResizeCorner.None:
-                    ApplyResize(e.delta);
-                    e.Use();
-                    break;
-                case EventType.MouseUp:
-                    _activeResizeCorner = ResizeCorner.None;
-                    break;
-            }
-        }
-
-        private bool IsInTitleBar(Vector2 mousePos)
-            => mousePos.y >= _windowRect.y && mousePos.y <= _windowRect.y + TitleBarHeight
-               && mousePos.x >= _windowRect.x && mousePos.x <= _windowRect.xMax;
 
         private void ApplyDefaultWindowSize()
         {
@@ -113,10 +77,10 @@ namespace DspBlueprintTransform.Plugin
 
         private ResizeCorner GetResizeCorner(Vector2 mousePos)
         {
-            bool nearLeft = mousePos.x >= _windowRect.x && mousePos.x <= _windowRect.x + ResizeHandleSize;
-            bool nearRight = mousePos.x <= _windowRect.xMax && mousePos.x >= _windowRect.xMax - ResizeHandleSize;
-            bool nearTop = mousePos.y >= _windowRect.y && mousePos.y <= _windowRect.y + ResizeHandleSize;
-            bool nearBottom = mousePos.y <= _windowRect.yMax && mousePos.y >= _windowRect.yMax - ResizeHandleSize;
+            bool nearLeft = mousePos.x >= 0 && mousePos.x <= ResizeHandleSize;
+            bool nearRight = mousePos.x <= _windowRect.width && mousePos.x >= _windowRect.width - ResizeHandleSize;
+            bool nearTop = mousePos.y >= 0 && mousePos.y <= ResizeHandleSize;
+            bool nearBottom = mousePos.y <= _windowRect.height && mousePos.y >= _windowRect.height - ResizeHandleSize;
 
             if (nearLeft && nearTop) return ResizeCorner.TopLeft;
             if (nearRight && nearTop) return ResizeCorner.TopRight;
@@ -151,6 +115,27 @@ namespace DspBlueprintTransform.Plugin
 
         private void DrawWindow(int id)
         {
+            Event e = Event.current;
+            switch (e.type)
+            {
+                case EventType.MouseDown when e.button == 0:
+                    if (e.clickCount == 2 && e.mousePosition.y <= TitleBarHeight)
+                        ApplyDefaultWindowSize();
+                    else
+                    {
+                        var corner = GetResizeCorner(e.mousePosition);
+                        if (corner != ResizeCorner.None)
+                            _activeResizeCorner = corner;
+                    }
+                    break;
+                case EventType.MouseDrag when _activeResizeCorner != ResizeCorner.None:
+                    ApplyResize(e.delta);
+                    break;
+                case EventType.MouseUp:
+                    _activeResizeCorner = ResizeCorner.None;
+                    break;
+            }
+
             float viewportHeight = Mathf.Max(50f, _windowRect.height - ContentAreaPadding);
             _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(viewportHeight));
 
