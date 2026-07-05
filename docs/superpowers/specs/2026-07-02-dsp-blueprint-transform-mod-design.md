@@ -283,3 +283,123 @@ public static BlueprintData VerticalOffset(BlueprintData bp, double offsetZ, Has
 1. **IsBeltOnlySmall 限制**：当前传送带序号功能限制"蓝图全部为传送带且数量<20"才能指定序号。改为多序号后这个限制是否保留？如果保留，多序号场景下的校验逻辑需更新（所有指定序号均须合法）。
 2. **翻转 + 线性变换的叠加**：用户同时勾选翻转和设置线性变换 zoomX=-2，两次 LinearTransformation 调用叠加后的行为需和网页版交叉验证。
 3. **基线在窗口重开时丢失**：`CaptureBaseline` 数据存在字段里，窗口关闭（GameObject Destroy）后丢失。玩家关闭再打开窗口时，之前 Apply 过的操作会被视为"新变更"再次执行——这是预期行为（字段值还在、基线重置），但需在 UI 上保证字段值不会被意外清空。
+
+---
+
+# 纯传送带方向反转与原地转向（2026-07-05 追加）
+
+- 日期：2026-07-05
+- 状态：已确认，待写实施计划
+- 基于：本文档 `IsBeltOnlySmall` / 传送带序号功能
+
+## 背景与约束
+
+`IsBeltOnlySmall()`（`TransformWindow.cs:343`）已允许在"蓝图全部为传送带且数量<20"时，通过 `offsetIndex`（逗号分隔序号，留空=全部）选定传送带做 X/Y/Z 坐标偏移。玩家提出两个新增能力，均在同一前提下、复用同一序号选择：
+
+1. 改变传送带方向——反转物流方向（不是改朝向贴图那么简单，是让选中传送带整体掉头：原来 A→B 变成 B→A）。
+2. Z 轴旋转——让选中传送带绕自身原地转向（改变 `Yaw`，不移动坐标），区别于现有 `LinearTransformation` 对整张蓝图做的绕竖直轴几何旋转（该参数不支持按序号筛选，且会连坐标一起转）。
+
+约束：
+- 复用现有 `IsBeltOnlySmall` 前提和 `offsetIndex` 序号选择，不引入新的适用范围判断。
+- 不改变现有偏移/翻转/线性变换的行为和接口。
+- macOS 开发机无法跑游戏验证，本节的字段级语义推断需要玩家在游戏内粘贴测试蓝图验证。
+
+## 目标
+
+- 新增 `BlueprintTransform.ReverseBeltDirection(bp, targetIndices)`：反转选中传送带的物流方向。
+- 新增 `BlueprintTransform.RotateInPlace(bp, degrees, targetIndices)`：让选中传送带绕自身原地转向。
+- `TransformWindow` 在"传送带序号"行新增一个 checkbox（反转方向）和一个文本框（转向角度），仅在 `IsBeltOnlySmall()` 为真时可用。
+
+## 关键决策
+
+| 决策点 | 选定方案 | 理由 |
+|--------|---------|------|
+| 方向反转语义 | 反转物流方向（拓扑 + 朝向 + 坡度同步） | 玩家明确要"掉头"效果，不是纯视觉调整；否则渲染箭头和实际流向会脱节 |
+| 反转算法 | `Output*` 四元组与 `Input*` 四元组整体互换 + `Yaw += 180` + `Tilt` 取反 | `BlueprintBuilding` 字段按互换对顺序声明（`OutputObjIdx`/`InputObjIdx`、`OutputToSlot`/`InputFromSlot`、`OutputFromSlot`/`InputToSlot`、`OutputOffset`/`InputOffset`），结构上支持该假设；断头（`-1`）互换后自然变成另一端断头，无需特判边界 |
+| 反转作用范围 | 仅对 `offsetIndex` 选中的集合反转（留空=全部） | 复用现有序号选择机制，不新增输入控件，和偏移功能行为一致 |
+| 原地转向语义 | 仅改 `Yaw`，不改 `LocalOffset`、不改拓扑、不改 `Tilt` | `Tilt` 由输入/输出端高度差决定，与朝向无关；坐标不变意味着不需要像 `LinearTransformation` 那样重算蓝图整体 `Area.Size`/`DragBoxSize`/`CursorOffset` |
+| 转向角度输入方式 | 复用自由角度文本框（同现有"旋转角度"风格，非固定步进按钮） | 与既有交互风格一致，实现最简；代价是允许非 90° 倍数角度，可能导致模型与实际连接不匹配（见风险） |
+| UI 位置 | 在"传送带序号"行新增两个控件，而非独立分组 | 三者都依赖同一 `IsBeltOnlySmall` 前提和同一 `targetIndices`，放在一起认知负担最小 |
+| 是否要求 IsBeltOnlySmall 前提 | 是，复用现有前提，不放开混合蓝图 | 与偏移序号功能保持同一护栏，避免在混合蓝图里单独识别/约束传送带子集的额外复杂度 |
+| Apply 执行顺序 | 偏移 → 传送带方向反转/转向 → 翻转 → 线性变换 | 传送带专属操作在坐标偏移之后、全局几何变换（翻转/线性变换）之前执行，使全局变换基于最终坐标计算，且方向反转后的 `Yaw` 能被后续全局翻转正确叠加 |
+
+## 备选方案（被否决）
+
+| 方案 | 否决理由 |
+|------|---------|
+| 方向反转仅调整 Yaw（不改拓扑） | 物流方向（游戏逻辑上的实际流向）不变，只是视觉朝向变了，达不到"掉头"效果，且可能导致朝向与拓扑连接不一致 |
+| 反转/转向始终作用于蓝图全部传送带 | 玩家可能只想反转/旋转一段支线，强制全体操作达不到诉求 |
+| 原地转向做坐标旋转（像 LinearTransformation 一样绕中心点转） | 需要额外确定旋转中心（局部质心/全局中心），语义和实现都更复杂，玩家明确只要"原地转向"不移动位置 |
+| 转向角度用固定步进选择（90°/180°/270°） | 需要额外 UI 控件（按钮/下拉），且与玩家选择的"复用自由角度输入框"不一致 |
+| 反转/转向放开混合蓝图限制 | 需要在混合蓝图里单独识别、校验哪些序号是传送带，校验逻辑复杂度显著上升，收益不明确 |
+
+## 接口变更
+
+`BlueprintTransform.cs` 新增（不改动现有方法签名）：
+
+```csharp
+public static BlueprintData ReverseBeltDirection(BlueprintData bp, HashSet<int>? targetIndices = null)
+public static BlueprintData RotateInPlace(BlueprintData bp, double degrees, HashSet<int>? targetIndices = null)
+```
+
+`ReverseBeltDirection` 对 `targetIndices == null || targetIndices.Contains(b.Index)` 的每个 `BlueprintBuilding`：
+
+```csharp
+(b.OutputObjIdx, b.InputObjIdx) = (b.InputObjIdx, b.OutputObjIdx);
+(b.OutputToSlot, b.InputFromSlot) = (b.InputFromSlot, b.OutputToSlot);
+(b.OutputFromSlot, b.InputToSlot) = (b.InputToSlot, b.OutputFromSlot);
+(b.OutputOffset, b.InputOffset) = (b.InputOffset, b.OutputOffset);
+b.Yaw[0] += 180; b.Yaw[1] += 180;
+b.Tilt = -b.Tilt; b.Tilt2 = -b.Tilt2;
+```
+
+`RotateInPlace` 对目标建筑：
+
+```csharp
+b.Yaw[0] += degrees;
+b.Yaw[1] += degrees;
+```
+
+## UI 变更
+
+`TransformWindow.cs`：
+
+```
+传送带序号(留空=全部): []   ☐ 反转方向   转向: [0]
+```
+
+新增字段：`_beltReverse: bool = false`、`_beltRotate: string = "0"`。二者仅在 `IsBeltOnlySmall()` 为真时可交互；`IsBeltOnlySmall()` 不成立且这两个字段被设置为非默认值时，复用现有"仅当蓝图全部为传送带且数量小于 20 时可指定序号"报错分支（追加反转/转向到同一条校验里）。
+
+`ApplyAll` 新增步骤（插入在偏移之后、翻转之前）：
+
+```csharp
+double beltRotateDeg = ParseOrZero(_beltRotate);
+bool usesBeltOnlyFeature = indices != null || _beltReverse || beltRotateDeg != 0;
+if (usesBeltOnlyFeature && !IsBeltOnlySmall())
+{
+    _statusMessage = "仅当蓝图全部为传送带且数量小于 20 时可指定序号/反转方向/转向";
+    _statusIsError = true;
+    return;
+}
+
+if (_beltReverse)
+    data = BlueprintTransform.ReverseBeltDirection(data, indices);
+if (beltRotateDeg != 0)
+    data = BlueprintTransform.RotateInPlace(data, beltRotateDeg, indices);
+```
+
+这条校验替换（而非追加）现有 `if (indices != null && !IsBeltOnlySmall())` 分支，覆盖范围从"仅序号"扩展到"序号/反转/转向任一被使用"。
+
+`ResetAll` 新增：`_beltReverse = false; _beltRotate = "0";`
+
+## 涉及的文件路径
+
+- **修改**：`dsp-mod/Blueprint/BlueprintTransform.cs` — 新增 `ReverseBeltDirection`、`RotateInPlace`
+- **修改**：`dsp-mod/Plugin/TransformWindow.cs` — UI 新增 checkbox + 文本框、`ApplyAll`/`ResetAll` 逻辑
+- **修改**：`dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs` — 新增 `ReverseBeltDirection`/`RotateInPlace` 测试用例（含断头边界、`targetIndices=null` 全选、多序号子集）
+
+## 开放问题/风险
+
+1. **反转算法未经游戏内验证**：`Output*`/`Input*` 四元组互换语义是基于字段声明顺序推断的，参考网页版（`3rd/edit-dspblue-print`）未实现此功能、无先例可核对。需要玩家在游戏里粘贴测试蓝图，确认反转后传送带物流方向和朝向渲染正确。
+2. **任意角度转向的游戏内有效性未知**：传送带贴图/寻路是否接受非 90° 倍数的 `Yaw`，或是否需要与相邻建筑的连接槽位重新对齐，尚不确定。若实测发现异常，后续可能需要收紧为 90° 步进或增加角度校验。
+3. **转向与拓扑不同步的风险**：`RotateInPlace` 只改 `Yaw` 不改 `InputObjIdx`/`OutputObjIdx`，若游戏实际按拓扑而非 `Yaw` 渲染路径，转向可能仅影响外观、不影响流向；这与玩家的预期（"原地转向"）一致，但需要在验收时明确告知这一点，避免误以为转向也能改变连接关系。
