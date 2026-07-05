@@ -79,6 +79,21 @@ namespace DspBlueprintTransform.Plugin
                 _inputCode = GUIUtility.systemCopyBuffer;
         }
 
+        // 拦截输入防止窗口内点击穿透到场景（建筑选择等射线检测）
+        // Update 在游戏逻辑之前执行，提前清掉鼠标状态
+        private void Update()
+        {
+            if (!_windowRect.Contains(Input.mousePosition))
+                return;
+
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)
+                || Input.GetMouseButton(0) || Input.GetMouseButton(1)
+                || Mathf.Abs(Input.mouseScrollDelta.y) > 0.01f)
+            {
+                Input.ResetInputAxes();
+            }
+        }
+
         private void OnGUI()
         {
             GUI.backgroundColor = Color.white;
@@ -86,19 +101,9 @@ namespace DspBlueprintTransform.Plugin
                 GetInstanceID(), _windowRect, DrawWindow, "蓝图变换",
                 GUILayout.Width(_windowRect.width), GUILayout.Height(_windowRect.height));
 
-            // 阻止窗口内操作穿透到后方游戏界面
+            // 阻止窗口内事件穿透到游戏 IMGUI 层（原生菜单、其他 mod 窗口）
             if (_windowRect.Contains(Event.current.mousePosition))
-            {
-                switch (Event.current.type)
-                {
-                    case EventType.MouseDown:
-                    case EventType.MouseUp:
-                    case EventType.MouseDrag:
-                    case EventType.ScrollWheel:
-                        Event.current.Use();
-                        break;
-                }
-            }
+                Event.current.Use();
         }
 
         private void ApplyDefaultWindowSize()
