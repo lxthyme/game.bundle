@@ -386,23 +386,23 @@ git commit -m "feat(dsp-mod): TransformWindow 接入传送带方向反转与原�
 - Consumes：Task 1-3 全部产出
 - Produces：无（本任务是本计划的验收关口）
 
-- [ ] **Step 1: 运行完整测试套件**
+- [x] **Step 1: 运行完整测试套件**
 
 Run: `cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod/dsp-mod && dotnet test Blueprint.Tests/Blueprint.Tests.csproj`
 Expected: `Passed! - Failed: 0, Passed: 33, ...`（26 现有 + 4 ReverseBeltDirection + 3 RotateInPlace）
 
-- [ ] **Step 2: 确认 Plugin 项目整体可编译**
+- [x] **Step 2: 确认 Plugin 项目整体可编译**
 
 Run: `cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod/dsp-mod && dotnet build DspBlueprintTransform.sln`
 Expected: `Build succeeded. 0 Warning(s) 0 Error(s)`
 
-- [ ] **Step 3: 记录游戏内验证清单（需 Windows 游戏环境，本计划范围外，仅记录待办）**
+- [x] **Step 3: 记录游戏内验证清单（需 Windows 游戏环境，本计划范围外，仅记录待办）**
 
 在设计文档 `docs/superpowers/specs/2026-07-02-dsp-blueprint-transform-mod-design.md` 的"开放问题/风险"小节确认以下三项已列出（无需改动文件，仅核对）：
 1. 反转算法的 `Output*`/`Input*` 四元组互换语义需要玩家在游戏里粘贴测试蓝图，确认反转后物流方向和朝向渲染正确。
 2. 任意角度转向（非 90° 倍数）在游戏内是否有效未知，需实测；若异常需后续收紧为 90° 步进。
 3. `RotateInPlace` 只改朝向不改拓扑——验收时需向玩家说明"转向"不会改变实际连接关系，仅改变视觉朝向。
 
-- [ ] **Step 4: 提交（若前序 Step 有文档补充）**
+- [x] **Step 4: 提交（若前序 Step 有文档补充）**
 
 若 Step 3 核对中发现设计文档遗漏上述任一项，补充后提交；若已全部存在，本步骤跳过（无需空提交）。
