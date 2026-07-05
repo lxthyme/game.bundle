@@ -26,7 +26,7 @@
 - Produces: `HorizontalOffset(BlueprintData bp, double offsetX, double offsetY, HashSet<int>? targetIndices = null)`
 - Produces: `VerticalOffset(BlueprintData bp, double offsetZ, HashSet<int>? targetIndices = null)`
 
-- [ ] **Step 1: 修改 HorizontalOffset 签名和内部逻辑**
+- [x] **Step 1: 修改 HorizontalOffset 签名和内部逻辑**
 
 将 `HorizontalOffset` 方法的参数 `int targetIndex = -1` 改为 `HashSet<int>? targetIndices = null`，内部匹配逻辑相应调整：
 
@@ -46,7 +46,7 @@ public static BlueprintData HorizontalOffset(BlueprintData bp, double offsetX, d
 }
 ```
 
-- [ ] **Step 2: 修改 VerticalOffset 签名和内部逻辑**
+- [x] **Step 2: 修改 VerticalOffset 签名和内部逻辑**
 
 将 `VerticalOffset` 方法的参数 `int targetIndex = -1` 改为 `HashSet<int>? targetIndices = null`：
 
@@ -119,14 +119,14 @@ public static BlueprintData VerticalOffset(BlueprintData bp, double offsetZ, Has
 }
 ```
 
-- [ ] **Step 3: 确认编译通过**
+- [x] **Step 3: 确认编译通过**
 
 ```bash
 cd dsp-mod && dotnet build Blueprint/Blueprint.csproj
 ```
 Expected: Build succeeded.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add dsp-mod/Blueprint/BlueprintTransform.cs
@@ -145,7 +145,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: `HorizontalOffset(bp, x, y, HashSet<int>?)`, `VerticalOffset(bp, z, HashSet<int>?)` (from Task 1)
 
-- [ ] **Step 1: 更新现有测试用例适配新签名**
+- [x] **Step 1: 更新现有测试用例适配新签名**
 
 将 `targetIndex: 0` 改为 `new HashSet<int> { 0 }`，将 `targetIndex: 1` 改为 `new HashSet<int> { 1 }`：
 
@@ -159,14 +159,14 @@ var result = BlueprintTransform.HorizontalOffset(bp, 5, -3, targetIndices: new H
 var result = BlueprintTransform.VerticalOffset(bp, 2, targetIndices: new HashSet<int> { 1 });
 ```
 
-- [ ] **Step 2: 运行现有测试确认全部通过**
+- [x] **Step 2: 运行现有测试确认全部通过**
 
 ```bash
 cd dsp-mod && dotnet test Blueprint.Tests/Blueprint.Tests.csproj
 ```
 Expected: All 8 existing tests PASS.
 
-- [ ] **Step 3: 新增多序号 HorizontalOffset 测试**
+- [x] **Step 3: 新增多序号 HorizontalOffset 测试**
 
 在 `BlueprintTransformTests` 类末尾追加：
 
@@ -206,14 +206,14 @@ public void HorizontalOffset_WithNullTargetIndices_MovesAll()
 }
 ```
 
-- [ ] **Step 4: 运行全部测试**
+- [x] **Step 4: 运行全部测试**
 
 ```bash
 cd dsp-mod && dotnet test Blueprint.Tests/Blueprint.Tests.csproj
 ```
 Expected: All 11 tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs
@@ -232,7 +232,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: `HorizontalOffset(bp, x, y, HashSet<int>?)`, `VerticalOffset(bp, z, HashSet<int>?)` (from Task 1)
 
-- [ ] **Step 1: 新增字段——翻转勾选框、基线快照**
+- [x] **Step 1: 新增字段——翻转勾选框、基线快照**
 
 在现有字段声明区（`_rotate` 之后、`_parsed` 之前）插入：
 
@@ -252,7 +252,7 @@ private string _baselineZoomY = "1";
 private string _baselineRotate = "0";
 ```
 
-- [ ] **Step 2: 新增 ParseBeltIndices 辅助方法**
+- [x] **Step 2: 新增 ParseBeltIndices 辅助方法**
 
 在 `ParseOrZero` 方法之后追加：
 
@@ -270,7 +270,7 @@ private static HashSet<int>? ParseBeltIndices(string s)
 }
 ```
 
-- [ ] **Step 3: 重写 DrawWindow 方法——UI 布局紧凑化**
+- [x] **Step 3: 重写 DrawWindow 方法——UI 布局紧凑化**
 
 用以下完整实现替换现有 `DrawWindow` 方法（保留 `DrawResizeHandles`、`HandleResize` 等其余方法不变）：
 
@@ -370,14 +370,14 @@ private void DrawWindow(int id)
 }
 ```
 
-- [ ] **Step 4: 确认编译通过**
+- [x] **Step 4: 确认编译通过**
 
 ```bash
 cd dsp-mod && dotnet build Plugin/Plugin.csproj
 ```
 Expected: Build succeeded. 注意可能有 warning（`ApplyAll`、`ResetAll`、`CaptureBaseline` 方法尚未定义，在 Task 4 补齐）。
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add dsp-mod/Plugin/TransformWindow.cs
@@ -397,7 +397,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - Consumes: UI 布局（from Task 3）、`HorizontalOffset`/`VerticalOffset` 新签名（from Task 1）
 - Produces: `CaptureBaseline()`, `ApplyAll()`, `ResetAll()`
 
-- [ ] **Step 1: 删除旧的 Apply 方法和 DrawLabeledField**
+- [x] **Step 1: 删除旧的 Apply 方法和 DrawLabeledField**
 
 删除以下不再需要的方法：
 - `DrawLabeledField`（静态辅助，布局已内联）
@@ -405,7 +405,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - `ApplyLinearTransformationFromFields`（被 `ApplyAll` 替代）
 - `ApplyLinearTransformation(double, double, double)`（被 `ApplyAll` 内联）
 
-- [ ] **Step 2: 新增 CaptureBaseline 和脏状态判定方法**
+- [x] **Step 2: 新增 CaptureBaseline 和脏状态判定方法**
 
 在 `ParseBeltIndices` 之后追加：
 
@@ -436,7 +436,7 @@ private bool IsLinearDirty()
     => _zoomX != _baselineZoomX || _zoomY != _baselineZoomY || _rotate != _baselineRotate;
 ```
 
-- [ ] **Step 3: 新增 ApplyAll 方法**
+- [x] **Step 3: 新增 ApplyAll 方法**
 
 在 `IsLinearDirty` 之后追加：
 
@@ -508,7 +508,7 @@ private void ApplyAll()
 }
 ```
 
-- [ ] **Step 4: 新增 ResetAll 方法**
+- [x] **Step 4: 新增 ResetAll 方法**
 
 在 `ApplyAll` 之后追加：
 
@@ -531,7 +531,7 @@ private void ResetAll()
 }
 ```
 
-- [ ] **Step 5: 修改 TryParse 方法——解析成功后调用 CaptureBaseline**
+- [x] **Step 5: 修改 TryParse 方法——解析成功后调用 CaptureBaseline**
 
 在 `TryParse` 方法的成功分支末尾添加 `CaptureBaseline()` 调用。找到：
 
@@ -548,14 +548,14 @@ _statusIsError = false;
 CaptureBaseline();
 ```
 
-- [ ] **Step 6: 确认编译通过**
+- [x] **Step 6: 确认编译通过**
 
 ```bash
 cd dsp-mod && dotnet build Plugin/Plugin.csproj
 ```
 Expected: Build succeeded, zero errors.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add dsp-mod/Plugin/TransformWindow.cs
@@ -571,21 +571,21 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 **Files:**
 - 验证: `dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs`
 
-- [ ] **Step 1: 运行全部单元测试**
+- [x] **Step 1: 运行全部单元测试**
 
 ```bash
 cd dsp-mod && dotnet test Blueprint.Tests/Blueprint.Tests.csproj
 ```
 Expected: All tests PASS.
 
-- [ ] **Step 2: 确认 Plugin 项目编译通过**
+- [x] **Step 2: 确认 Plugin 项目编译通过**
 
 ```bash
 cd dsp-mod && dotnet build Plugin/Plugin.csproj
 ```
 Expected: Build succeeded.
 
-- [ ] **Step 3: 人工检查点清单**（需在 Windows 游戏环境验证）
+- [x] **Step 3: 人工检查点清单**（需在 Windows 游戏环境验证）
 
 以下项目在当前 macOS 环境无法验证，需用户在 Windows 端确认：
 - 窗口 UI 布局是否与设计图一致
@@ -597,7 +597,7 @@ Expected: Build succeeded.
 - Reset 是否正确清空参数/输出/状态，保留蓝图码
 - 窗口缩放、双击重置等已有功能是否不受影响
 
-- [ ] **Step 4: Commit（如有检查点调整）**
+- [x] **Step 4: Commit（如有检查点调整）**
 
 ```bash
 git add -A
