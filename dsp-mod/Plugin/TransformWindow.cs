@@ -224,9 +224,9 @@ namespace DspBlueprintTransform.Plugin
             _defaultWidthText = GUILayout.TextField(_defaultWidthText, GUILayout.Width(50));
             GUILayout.Label("高度", GUILayout.Width(30));
             _defaultHeightText = GUILayout.TextField(_defaultHeightText, GUILayout.Width(50));
-            if (GUILayout.Button("设置")) ApplyDefaultWindowSize();
-            GUILayout.Label($"当前: {(int)_windowRect.width} × {(int)_windowRect.height}", GUILayout.Width(120));
+            if (Button("设置", 54f)) ApplyDefaultWindowSize();
             GUILayout.EndHorizontal();
+            GUILayout.Label($"当前: {(int)_windowRect.width} × {(int)_windowRect.height}");
             GUILayout.Space(8);
 
             // ---- 蓝图码输入 ----
@@ -236,8 +236,8 @@ namespace DspBlueprintTransform.Plugin
             if (_inputCode != prevInput) ResetAll();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("从剪贴板读取")) { _inputCode = GUIUtility.systemCopyBuffer; ResetAll(); }
-            if (GUILayout.Button("解析")) TryParse();
+            if (Button("从剪贴板读取", 110f)) { _inputCode = GUIUtility.systemCopyBuffer; ResetAll(); }
+            if (Button("解析", 54f)) TryParse();
             GUILayout.EndHorizontal();
 
             if (!string.IsNullOrEmpty(_statusMessage))
@@ -292,8 +292,8 @@ namespace DspBlueprintTransform.Plugin
 
             // ---- 应用 / 重置 ----
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("应用")) ApplyAll();
-            if (GUILayout.Button("重置")) ResetAll();
+            if (Button("应用", 54f)) ApplyAll();
+            if (Button("重置", 54f)) ResetAll();
             GUILayout.EndHorizontal();
 
             GUILayout.Space(8);
@@ -301,7 +301,7 @@ namespace DspBlueprintTransform.Plugin
             // ---- 输出蓝图码 ----
             GUILayout.Label("输出蓝图码");
             GUILayout.TextArea(_outputCode, GUILayout.Height(TextAreaHeight), GUILayout.Width(TextAreaWidth));
-            if (GUILayout.Button("复制到剪贴板")) GUIUtility.systemCopyBuffer = _outputCode;
+            if (Button("复制到剪贴板", 110f)) GUIUtility.systemCopyBuffer = _outputCode;
 
             GUILayout.EndScrollView();
 
@@ -312,6 +312,9 @@ namespace DspBlueprintTransform.Plugin
         }
 
         private static readonly Color ResizeHandleColor = new Color(1f, 1f, 1f, 0.35f);
+
+        private static bool Button(string text, float width)
+            => GUILayout.Button(text, GUILayout.Width(width));
 
         private void DrawResizeHandles()
         {
