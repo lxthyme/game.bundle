@@ -12,6 +12,8 @@ namespace DspBlueprintTransform.Plugin
         public const string PluginVersion = "0.1.0";
 
         private ConfigEntry<KeyboardShortcut> _toggleKey = null!;
+        private ConfigEntry<int> _windowX = null!;
+        private ConfigEntry<int> _windowY = null!;
         private ConfigEntry<int> _windowWidth = null!;
         private ConfigEntry<int> _windowHeight = null!;
         private TransformWindow _window = null!;
@@ -23,6 +25,18 @@ namespace DspBlueprintTransform.Plugin
                 "ToggleWindowKey",
                 new KeyboardShortcut(KeyCode.F7),
                 "打开/关闭蓝图变换窗口的快捷键");
+
+            _windowX = Config.Bind(
+                "General",
+                "WindowX",
+                100,
+                "窗口位置 X");
+
+            _windowY = Config.Bind(
+                "General",
+                "WindowY",
+                100,
+                "窗口位置 Y");
 
             _windowWidth = Config.Bind(
                 "General",
@@ -37,7 +51,7 @@ namespace DspBlueprintTransform.Plugin
                 "窗口高度");
 
             _window = gameObject.AddComponent<TransformWindow>();
-            _window.Init(_windowWidth, _windowHeight);
+            _window.Init(_windowX, _windowY, _windowWidth, _windowHeight);
             _window.enabled = false;
 
             Logger.LogInfo($"{PluginName} v{PluginVersion} 已加载");

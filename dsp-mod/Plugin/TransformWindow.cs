@@ -44,6 +44,8 @@ namespace DspBlueprintTransform.Plugin
 
         private BlueprintData? _originalParsed;
 
+        private ConfigEntry<int>? _configX;
+        private ConfigEntry<int>? _configY;
         private ConfigEntry<int>? _configWidth;
         private ConfigEntry<int>? _configHeight;
 
@@ -53,17 +55,21 @@ namespace DspBlueprintTransform.Plugin
         private string _defaultWidthText = "420";
         private string _defaultHeightText = "560";
 
-        public void Init(ConfigEntry<int> widthEntry, ConfigEntry<int> heightEntry)
+        public void Init(ConfigEntry<int> xEntry, ConfigEntry<int> yEntry, ConfigEntry<int> widthEntry, ConfigEntry<int> heightEntry)
         {
+            _configX = xEntry;
+            _configY = yEntry;
             _configWidth = widthEntry;
             _configHeight = heightEntry;
             _defaultWidthText = widthEntry.Value.ToString();
             _defaultHeightText = heightEntry.Value.ToString();
-            _windowRect = new Rect(_windowRect.x, _windowRect.y, widthEntry.Value, heightEntry.Value);
+            _windowRect = new Rect(xEntry.Value, yEntry.Value, widthEntry.Value, heightEntry.Value);
         }
 
-        private void SaveWindowSize()
+        private void SaveWindowState()
         {
+            if (_configX != null) _configX.Value = (int)_windowRect.x;
+            if (_configY != null) _configY.Value = (int)_windowRect.y;
             if (_configWidth != null) _configWidth.Value = (int)_windowRect.width;
             if (_configHeight != null) _configHeight.Value = (int)_windowRect.height;
         }
@@ -88,6 +94,7 @@ namespace DspBlueprintTransform.Plugin
 
         private void OnDisable()
         {
+            SaveWindowState();
             if (_blockPanel != null)
                 _blockPanel.SetActive(false);
         }
@@ -137,7 +144,7 @@ namespace DspBlueprintTransform.Plugin
             float width = Mathf.Clamp((float)ParseOrZero(_defaultWidthText, DefaultWindowWidth), MinWindowWidth, MaxWindowWidth);
             float height = Mathf.Clamp((float)ParseOrZero(_defaultHeightText, DefaultWindowHeight), MinWindowHeight, MaxWindowHeight);
             _windowRect = new Rect(_windowRect.x, _windowRect.y, width, height);
-            SaveWindowSize();
+            SaveWindowState();
         }
 
         private ResizeCorner GetResizeCorner(Vector2 mousePos)
@@ -201,11 +208,9 @@ namespace DspBlueprintTransform.Plugin
                     e.Use();
                     break;
                 case EventType.MouseUp:
-                    if (_activeResizeCorner != ResizeCorner.None)
-                    {
-                        _activeResizeCorner = ResizeCorner.None;
-                        SaveWindowSize();
-                    }
+                    // 不区分是缩放结束还是 GUI.DragWindow 拖动结束，统一在松手时保存一次
+                    _activeResizeCorner = ResizeCorner.None;
+                    SaveWindowState();
                     break;
             }
 
