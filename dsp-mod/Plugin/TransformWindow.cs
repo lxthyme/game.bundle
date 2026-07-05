@@ -293,6 +293,7 @@ namespace DspBlueprintTransform.Plugin
         {
             if (!EnsureParsed()) return;
 
+            _statusMessage = "";
             bool anyDirty = false;
             var data = _parsed!.Clone();
 
@@ -370,6 +371,7 @@ namespace DspBlueprintTransform.Plugin
             _statusMessage = "";
             _statusIsError = false;
             _parsed = null;
+            CaptureBaseline();
         }
 
         private bool EnsureParsed()
@@ -378,17 +380,6 @@ namespace DspBlueprintTransform.Plugin
             _statusMessage = "请先粘贴蓝图码并点击「解析」";
             _statusIsError = true;
             return false;
-        }
-
-        private void Finish(BlueprintData result, string? extraNote = null)
-        {
-            _parsed = result;
-            _outputCode = BlueprintParser.ToStr(result);
-            GUIUtility.systemCopyBuffer = _outputCode;
-            _statusMessage = "已应用变换并复制到剪贴板";
-            if (!string.IsNullOrEmpty(extraNote))
-                _statusMessage += $"（{extraNote}）";
-            _statusIsError = false;
         }
 
         private static double ParseOrZero(string s, double fallback = 0)
