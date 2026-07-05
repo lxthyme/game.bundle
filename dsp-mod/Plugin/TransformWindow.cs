@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using DspBlueprintTransform.Blueprint;
@@ -35,6 +36,20 @@ namespace DspBlueprintTransform.Plugin
         private string _zoomX = "1";
         private string _zoomY = "1";
         private string _rotate = "0";
+
+        private bool _flipH = false;
+        private bool _flipV = false;
+
+        // 脏状态基线快照
+        private string _baselineOffsetX = "0";
+        private string _baselineOffsetY = "0";
+        private string _baselineOffsetZ = "0";
+        private string _baselineOffsetIndex = "";
+        private bool _baselineFlipH = false;
+        private bool _baselineFlipV = false;
+        private string _baselineZoomX = "1";
+        private string _baselineZoomY = "1";
+        private string _baselineRotate = "0";
 
         private BlueprintData? _parsed;
 
@@ -149,6 +164,7 @@ namespace DspBlueprintTransform.Plugin
             float viewportHeight = Mathf.Max(50f, _windowRect.height - ContentAreaPadding);
             _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(viewportHeight));
 
+            // ---- 窗口默认宽高 ----
             GUILayout.Label("窗口默认宽高（双击标题栏应用，或点设置立即生效）");
             GUILayout.BeginHorizontal();
             GUILayout.Label("宽度", GUILayout.Width(30));
@@ -159,6 +175,7 @@ namespace DspBlueprintTransform.Plugin
             GUILayout.EndHorizontal();
             GUILayout.Space(8);
 
+            // ---- 蓝图码输入 ----
             GUILayout.Label("蓝图码（粘贴或从剪贴板读取）");
             _inputCode = GUILayout.TextArea(_inputCode, GUILayout.Height(TextAreaHeight), GUILayout.Width(TextAreaWidth));
 
@@ -176,28 +193,56 @@ namespace DspBlueprintTransform.Plugin
             }
 
             GUILayout.Space(8);
-            GUILayout.Label("坐标偏移");
-            DrawLabeledField("横向偏移 X", ref _offsetX);
-            DrawLabeledField("纵向偏移 Y", ref _offsetY);
-            DrawLabeledField("垂直偏移 Z", ref _offsetZ);
-            DrawLabeledField("传送带序号(留空=全部)", ref _offsetIndex);
-            if (GUILayout.Button("应用坐标偏移")) ApplyOffset();
 
-            GUILayout.Space(8);
-            GUILayout.Label("水平翻转");
+            // ---- 偏移：X/Y/Z 同行 ----
+            GUILayout.Label("偏移");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("横向翻转")) ApplyLinearTransformation(-1, 1, 0);
-            if (GUILayout.Button("纵向翻转")) ApplyLinearTransformation(1, -1, 0);
+            GUILayout.Label("X", GUILayout.Width(12));
+            _offsetX = GUILayout.TextField(_offsetX, GUILayout.Width(60));
+            GUILayout.Label("Y", GUILayout.Width(12));
+            _offsetY = GUILayout.TextField(_offsetY, GUILayout.Width(60));
+            GUILayout.Label("Z", GUILayout.Width(12));
+            _offsetZ = GUILayout.TextField(_offsetZ, GUILayout.Width(60));
+            GUILayout.EndHorizontal();
+
+            // ---- 水平翻转：checkbox ----
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("水平翻转", GUILayout.Width(60));
+            _flipH = GUILayout.Toggle(_flipH, "横向");
+            _flipV = GUILayout.Toggle(_flipV, "纵向");
+            GUILayout.EndHorizontal();
+
+            // ---- 线性变换：横向/纵向同行，旋转另起一行 ----
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("线性变换", GUILayout.Width(60));
+            GUILayout.Label("横向", GUILayout.Width(30));
+            _zoomX = GUILayout.TextField(_zoomX, GUILayout.Width(60));
+            GUILayout.Label("纵向", GUILayout.Width(30));
+            _zoomY = GUILayout.TextField(_zoomY, GUILayout.Width(60));
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("旋转角度(-360~360)", GUILayout.Width(130));
+            _rotate = GUILayout.TextField(_rotate, GUILayout.Width(60));
+            GUILayout.EndHorizontal();
+
+            // ---- 传送带序号 ----
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("传送带序号(留空=全部)", GUILayout.Width(150));
+            _offsetIndex = GUILayout.TextField(_offsetIndex);
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(4);
+
+            // ---- 应用 / 重置 ----
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("应用")) ApplyAll();
+            if (GUILayout.Button("重置")) ResetAll();
             GUILayout.EndHorizontal();
 
             GUILayout.Space(8);
-            GUILayout.Label("线性变换");
-            DrawLabeledField("横向缩放量", ref _zoomX);
-            DrawLabeledField("纵向缩放量", ref _zoomY);
-            DrawLabeledField("旋转角度(-360~360)", ref _rotate);
-            if (GUILayout.Button("应用线性变换")) ApplyLinearTransformationFromFields();
 
-            GUILayout.Space(8);
+            // ---- 输出蓝图码 ----
             GUILayout.Label("输出蓝图码");
             GUILayout.TextArea(_outputCode, GUILayout.Height(TextAreaHeight), GUILayout.Width(TextAreaWidth));
             if (GUILayout.Button("复制到剪贴板")) GUIUtility.systemCopyBuffer = _outputCode;
@@ -303,6 +348,16 @@ namespace DspBlueprintTransform.Plugin
             Finish(result);
         }
 
+        private void ApplyAll()
+        {
+            // 将在 Task 4 实现
+        }
+
+        private void ResetAll()
+        {
+            // 将在 Task 4 实现
+        }
+
         private bool EnsureParsed()
         {
             if (_parsed != null) return true;
@@ -324,5 +379,17 @@ namespace DspBlueprintTransform.Plugin
 
         private static double ParseOrZero(string s, double fallback = 0)
             => double.TryParse(s, out var v) ? v : fallback;
+
+        private static HashSet<int>? ParseBeltIndices(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return null;
+            var set = new HashSet<int>();
+            foreach (var part in s.Split(','))
+            {
+                if (int.TryParse(part.Trim(), out var idx))
+                    set.Add(idx);
+            }
+            return set.Count > 0 ? set : null;
+        }
     }
 }
