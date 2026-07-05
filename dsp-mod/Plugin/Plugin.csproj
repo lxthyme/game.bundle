@@ -32,6 +32,10 @@
       <HintPath>$(DspManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(DspManagedDir)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="BepInEx">
       <HintPath>..\..\3rd\BepInEx\BepInEx_win_x64_5.4.23.5\BepInEx\core\BepInEx.dll</HintPath>
       <Private>false</Private>

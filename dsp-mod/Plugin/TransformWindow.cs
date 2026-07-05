@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
 using UnityEngine;
+using UnityEngine.UI;
 using DspBlueprintTransform.Blueprint;
 
 namespace DspBlueprintTransform.Plugin
@@ -46,6 +47,8 @@ namespace DspBlueprintTransform.Plugin
         private ConfigEntry<int>? _configWidth;
         private ConfigEntry<int>? _configHeight;
 
+        private GameObject? _blockPanel;
+
         // 双击标题栏时窗口恢复到的宽高，可由用户在窗口顶部的文本框里自行设置
         private string _defaultWidthText = "420";
         private string _defaultHeightText = "560";
@@ -77,21 +80,45 @@ namespace DspBlueprintTransform.Plugin
         {
             if (string.IsNullOrEmpty(_inputCode))
                 _inputCode = GUIUtility.systemCopyBuffer;
+
+            CreateBlockPanel();
+            if (_blockPanel != null)
+                _blockPanel.SetActive(true);
         }
 
-        // 拦截输入防止窗口内点击穿透到场景（建筑选择等射线检测）
-        // Update 在游戏逻辑之前执行，提前清掉鼠标状态
-        private void Update()
+        private void OnDisable()
         {
-            if (!_windowRect.Contains(Input.mousePosition))
-                return;
+            if (_blockPanel != null)
+                _blockPanel.SetActive(false);
+        }
 
-            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)
-                || Input.GetMouseButton(0) || Input.GetMouseButton(1)
-                || Mathf.Abs(Input.mouseScrollDelta.y) > 0.01f)
-            {
-                Input.ResetInputAxes();
-            }
+        private void CreateBlockPanel()
+        {
+            if (_blockPanel != null) return;
+
+            var canvasGo = GameObject.Find("UI Root/Overlay Canvas");
+            if (canvasGo == null) return;
+
+            _blockPanel = new GameObject("DspBlueprintTransform_BlockPanel");
+            _blockPanel.transform.SetParent(canvasGo.transform, false);
+            var img = _blockPanel.AddComponent<Image>();
+            img.color = new Color(0, 0, 0, 0);
+            img.raycastTarget = true;
+        }
+
+        private void UpdateBlockPanel()
+        {
+            CreateBlockPanel();
+            if (_blockPanel == null) return;
+
+            var canvasRt = _blockPanel.transform.parent.GetComponent<RectTransform>();
+            var rt = _blockPanel.GetComponent<RectTransform>();
+            float sx = canvasRt.sizeDelta.x / Screen.width;
+            float sy = canvasRt.sizeDelta.y / Screen.height;
+            rt.sizeDelta = new Vector2(sx * _windowRect.width, sy * _windowRect.height);
+            rt.localPosition = new Vector2(
+                -canvasRt.sizeDelta.x / 2f + _windowRect.x * sx,
+                 canvasRt.sizeDelta.y / 2f - _windowRect.y * sy - rt.sizeDelta.y);
         }
 
         private void OnGUI()
@@ -101,7 +128,9 @@ namespace DspBlueprintTransform.Plugin
                 GetInstanceID(), _windowRect, DrawWindow, "蓝图变换",
                 GUILayout.Width(_windowRect.width), GUILayout.Height(_windowRect.height));
 
-            // 阻止窗口内事件穿透到游戏 IMGUI 层（原生菜单、其他 mod 窗口）
+            UpdateBlockPanel();
+
+            // 阻止窗口内事件穿透到 IMGUI 层（原生菜单、其他 mod 窗口）
             if (_windowRect.Contains(Event.current.mousePosition))
                 Event.current.Use();
         }
