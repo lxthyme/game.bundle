@@ -40,7 +40,8 @@ namespace DspBlueprintTransform.Plugin
         private bool _flipH = false;
         private bool _flipV = false;
 
-        // 脏状态基线快照
+        // 脏状态基线快照（包含蓝图码，任一变更即触发重新执行）
+        private string _baselineInputCode = "";
         private string _baselineOffsetX = "0";
         private string _baselineOffsetY = "0";
         private string _baselineOffsetZ = "0";
@@ -51,14 +52,14 @@ namespace DspBlueprintTransform.Plugin
         private string _baselineZoomY = "1";
         private string _baselineRotate = "0";
 
-        private BlueprintData? _parsed;
+        private BlueprintData? _originalParsed;
 
         // 双击标题栏时窗口恢复到的宽高，可由用户在窗口顶部的文本框里自行设置
         private string _defaultWidthText = "420";
         private string _defaultHeightText = "560";
 
-        private float MaxWindowWidth => Screen.width / 2f;
-        private float MaxWindowHeight => Screen.height / 2f;
+        private float MaxWindowWidth => Screen.width * 0.9f;
+        private float MaxWindowHeight => Screen.height * 0.9f;
 
         // 窗口变宽/变高时，输入输出文本框跟着放大；其余控件保持原有固定尺寸
         // 减去的量比 ContentAreaPadding 多留一点，给滚动视图的竖直滚动条腾出空间
@@ -270,84 +271,92 @@ namespace DspBlueprintTransform.Plugin
         {
             try
             {
-                _parsed = BlueprintParser.FromStr(_inputCode);
-                _statusMessage = $"解析成功：{_parsed.Buildings.Count} 个建筑";
+                _originalParsed = BlueprintParser.FromStr(_inputCode);
+                _statusMessage = $"解析成功：{_originalParsed.Buildings.Count} 个建筑";
                 _statusIsError = false;
                 CaptureBaseline();
             }
             catch (Exception ex)
             {
-                _parsed = null;
+                _originalParsed = null;
                 _statusMessage = $"解析失败：{ex.Message}";
                 _statusIsError = true;
             }
         }
 
         private bool IsBeltOnlySmall()
-            => _parsed != null
-               && _parsed.Buildings.Count > 0
-               && _parsed.Buildings.Count < 20
-               && _parsed.Buildings.All(b => BuildingMeta.IsBelt(b.ItemId));
+            => _originalParsed != null
+               && _originalParsed.Buildings.Count > 0
+               && _originalParsed.Buildings.Count < 20
+               && _originalParsed.Buildings.All(b => BuildingMeta.IsBelt(b.ItemId));
 
         private void ApplyAll()
         {
-            if (!EnsureParsed()) return;
-
-            _statusMessage = "";
-            bool anyDirty = false;
-            var data = _parsed!.Clone();
-
-            if (IsOffsetDirty())
+            // 蓝图码变化时自动重新解析
+            if (_inputCode != _baselineInputCode)
             {
-                double x = ParseOrZero(_offsetX);
-                double y = ParseOrZero(_offsetY);
-                double z = ParseOrZero(_offsetZ);
-                var indices = ParseBeltIndices(_offsetIndex);
-
-                // 指定传送带序号时需满足全为传送带且数量<20（与网页版限制一致；spec 开放问题待定）
-                if (indices != null && !IsBeltOnlySmall())
+                try
                 {
-                    _statusMessage = "仅当蓝图全部为传送带且数量小于 20 时可指定序号";
+                    _originalParsed = BlueprintParser.FromStr(_inputCode);
+                }
+                catch (Exception ex)
+                {
+                    _statusMessage = $"解析失败：{ex.Message}";
                     _statusIsError = true;
                     return;
                 }
-
-                data = BlueprintTransform.HorizontalOffset(data, x, y, indices);
-                if (z != 0)
-                {
-                    var afterVert = BlueprintTransform.VerticalOffset(data, z, indices);
-                    bool addedBase = afterVert.Buildings.Count > data.Buildings.Count;
-                    data = afterVert;
-                    if (addedBase) _statusMessage = "检测到悬空建筑，已自动加地基";
-                }
-                anyDirty = true;
             }
 
-            if (IsFlipDirty())
+            if (_originalParsed == null)
             {
-                double zoomX = _flipH ? -1 : 1;
-                double zoomY = _flipV ? -1 : 1;
-                data = BlueprintTransform.LinearTransformation(data, zoomX, zoomY, 0);
-                anyDirty = true;
+                _statusMessage = "请先粘贴蓝图码并点击「解析」";
+                _statusIsError = true;
+                return;
             }
 
-            if (IsLinearDirty())
-            {
-                double zoomX = ParseOrZero(_zoomX, 1);
-                double zoomY = ParseOrZero(_zoomY, 1);
-                double rotate = ParseOrZero(_rotate, 0);
-                data = BlueprintTransform.LinearTransformation(data, zoomX, zoomY, rotate);
-                anyDirty = true;
-            }
+            _statusMessage = "";
 
-            if (!anyDirty)
+            if (!IsAnyDirty())
             {
                 _statusMessage = "无变更";
                 _statusIsError = true;
                 return;
             }
 
-            _parsed = data;
+            var indices = ParseBeltIndices(_offsetIndex);
+            if (indices != null && !IsBeltOnlySmall())
+            {
+                _statusMessage = "仅当蓝图全部为传送带且数量小于 20 时可指定序号";
+                _statusIsError = true;
+                return;
+            }
+
+            // 每次从原始蓝图出发，应用全部参数
+            var data = _originalParsed.Clone();
+
+            double ox = ParseOrZero(_offsetX);
+            double oy = ParseOrZero(_offsetY);
+            double oz = ParseOrZero(_offsetZ);
+            data = BlueprintTransform.HorizontalOffset(data, ox, oy, indices);
+            if (oz != 0)
+            {
+                var afterVert = BlueprintTransform.VerticalOffset(data, oz, indices);
+                if (afterVert.Buildings.Count > data.Buildings.Count)
+                    _statusMessage = "检测到悬空建筑，已自动加地基";
+                data = afterVert;
+            }
+
+            double zx = _flipH ? -1 : 1;
+            double zy = _flipV ? -1 : 1;
+            double zr = ParseOrZero(_rotate, 0);
+            if (_flipH || _flipV)
+                data = BlueprintTransform.LinearTransformation(data, zx, zy, 0);
+
+            double lx = ParseOrZero(_zoomX, 1);
+            double ly = ParseOrZero(_zoomY, 1);
+            if (lx != 1 || ly != 1 || zr != 0)
+                data = BlueprintTransform.LinearTransformation(data, lx, ly, zr);
+
             _outputCode = BlueprintParser.ToStr(data);
             GUIUtility.systemCopyBuffer = _outputCode;
             if (string.IsNullOrEmpty(_statusMessage))
@@ -370,16 +379,8 @@ namespace DspBlueprintTransform.Plugin
             _outputCode = "";
             _statusMessage = "";
             _statusIsError = false;
-            _parsed = null;
+            _originalParsed = null;
             CaptureBaseline();
-        }
-
-        private bool EnsureParsed()
-        {
-            if (_parsed != null) return true;
-            _statusMessage = "请先粘贴蓝图码并点击「解析」";
-            _statusIsError = true;
-            return false;
         }
 
         private static double ParseOrZero(string s, double fallback = 0)
@@ -399,6 +400,7 @@ namespace DspBlueprintTransform.Plugin
 
         private void CaptureBaseline()
         {
+            _baselineInputCode = _inputCode;
             _baselineOffsetX = _offsetX;
             _baselineOffsetY = _offsetY;
             _baselineOffsetZ = _offsetZ;
@@ -410,16 +412,16 @@ namespace DspBlueprintTransform.Plugin
             _baselineRotate = _rotate;
         }
 
-        private bool IsOffsetDirty()
-            => _offsetX != _baselineOffsetX
+        private bool IsAnyDirty()
+            => _inputCode != _baselineInputCode
+            || _offsetX != _baselineOffsetX
             || _offsetY != _baselineOffsetY
             || _offsetZ != _baselineOffsetZ
-            || _offsetIndex != _baselineOffsetIndex;
-
-        private bool IsFlipDirty()
-            => _flipH != _baselineFlipH || _flipV != _baselineFlipV;
-
-        private bool IsLinearDirty()
-            => _zoomX != _baselineZoomX || _zoomY != _baselineZoomY || _rotate != _baselineRotate;
+            || _offsetIndex != _baselineOffsetIndex
+            || _flipH != _baselineFlipH
+            || _flipV != _baselineFlipV
+            || _zoomX != _baselineZoomX
+            || _zoomY != _baselineZoomY
+            || _rotate != _baselineRotate;
     }
 }
