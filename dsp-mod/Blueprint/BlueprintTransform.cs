@@ -84,6 +84,26 @@ namespace DspBlueprintTransform.Blueprint
             return res;
         }
 
+        public static BlueprintData ReverseBeltDirection(BlueprintData bp, System.Collections.Generic.HashSet<int>? targetIndices = null)
+        {
+            var res = bp.Clone();
+            foreach (var b in res.Buildings)
+            {
+                if (targetIndices != null && !targetIndices.Contains(b.Index)) continue;
+
+                (b.OutputObjIdx, b.InputObjIdx) = (b.InputObjIdx, b.OutputObjIdx);
+                (b.OutputToSlot, b.InputFromSlot) = (b.InputFromSlot, b.OutputToSlot);
+                (b.OutputFromSlot, b.InputToSlot) = (b.InputToSlot, b.OutputFromSlot);
+                (b.OutputOffset, b.InputOffset) = (b.InputOffset, b.OutputOffset);
+
+                b.Yaw[0] += 180;
+                b.Yaw[1] += 180;
+                b.Tilt = -b.Tilt;
+                b.Tilt2 = -b.Tilt2;
+            }
+            return res;
+        }
+
         public static BlueprintData LinearTransformation(BlueprintData bp, double zoomX, double zoomY, double rotateDeg)
         {
             var res = bp.Clone();

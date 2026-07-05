@@ -27,7 +27,7 @@
 - Consumes：`BlueprintData`/`BlueprintBuilding`（`dsp-mod/Blueprint/BlueprintData.cs`）现有字段：`OutputObjIdx`/`InputObjIdx`/`OutputToSlot`/`InputFromSlot`/`OutputFromSlot`/`InputToSlot`/`OutputOffset`/`InputOffset`（均为 `int`/`sbyte`，默认 `OutputObjIdx`/`InputObjIdx = -1`）、`Yaw`（`double[2]`）、`Tilt`/`Tilt2`（`double`）。`BlueprintData.Clone()` 已存在，深拷贝所有建筑字段。
 - Produces：`public static BlueprintData ReverseBeltDirection(BlueprintData bp, HashSet<int>? targetIndices = null)`，供 Task 3 的 `TransformWindow.ApplyAll` 调用。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs` 中，最后一个现有测试方法 `HorizontalOffset_WithNullTargetIndices_MovesAll`（第 223-230 行）的结束 `}`（第 230 行）之后、类的结束 `}`（第 231 行）之前追加：
 
@@ -120,12 +120,12 @@
         }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod/dsp-mod && dotnet test Blueprint.Tests/Blueprint.Tests.csproj --filter ReverseBeltDirection`
 Expected: 编译失败（`BlueprintTransform` 不含 `ReverseBeltDirection` 定义）或 4 个测试全部 FAIL。
 
-- [ ] **Step 3: 实现 ReverseBeltDirection**
+- [x] **Step 3: 实现 ReverseBeltDirection**
 
 在 `dsp-mod/Blueprint/BlueprintTransform.cs` 的 `VerticalOffset` 方法之后（`LinearTransformation` 方法之前，即第 86-87 行之间）插入：
 
@@ -152,12 +152,12 @@ Expected: 编译失败（`BlueprintTransform` 不含 `ReverseBeltDirection` 定�
 
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod/dsp-mod && dotnet test Blueprint.Tests/Blueprint.Tests.csproj --filter ReverseBeltDirection`
 Expected: `Passed! - Failed: 0, Passed: 4, ...`
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod

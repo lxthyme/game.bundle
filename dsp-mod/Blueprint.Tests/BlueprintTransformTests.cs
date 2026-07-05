@@ -228,5 +228,92 @@ namespace DspBlueprintTransform.Blueprint.Tests
             Assert.Equal(5.5, result.Buildings[0].LocalOffset[0].X, 4);
             Assert.Equal(3.5, result.Buildings[1].LocalOffset[0].X, 4);
         }
+
+        [Fact]
+        public void ReverseBeltDirection_SwapsOutputInputQuadrupleAndFacing_OnTargetBuilding()
+        {
+            var bp = BuildFixture();
+            bp.Buildings[0].OutputObjIdx = 1;
+            bp.Buildings[0].InputObjIdx = -1;
+            bp.Buildings[0].OutputToSlot = 3;
+            bp.Buildings[0].InputFromSlot = 7;
+            bp.Buildings[0].OutputFromSlot = 2;
+            bp.Buildings[0].InputToSlot = 5;
+            bp.Buildings[0].OutputOffset = 1;
+            bp.Buildings[0].InputOffset = 0;
+            bp.Buildings[0].Tilt = 12.5;
+            bp.Buildings[0].Tilt2 = -3.5;
+
+            var result = BlueprintTransform.ReverseBeltDirection(bp, new HashSet<int> { 0 });
+            var b = result.Buildings[0];
+
+            Assert.Equal(-1, b.OutputObjIdx);
+            Assert.Equal(1, b.InputObjIdx);
+            Assert.Equal(7, b.OutputToSlot);
+            Assert.Equal(3, b.InputFromSlot);
+            Assert.Equal(5, b.OutputFromSlot);
+            Assert.Equal(2, b.InputToSlot);
+            Assert.Equal(0, b.OutputOffset);
+            Assert.Equal(1, b.InputOffset);
+            Assert.Equal(270, b.Yaw[0], 6); // 原 90 + 180
+            Assert.Equal(270, b.Yaw[1], 6);
+            Assert.Equal(-12.5, b.Tilt, 6);
+            Assert.Equal(3.5, b.Tilt2, 6);
+
+            // 未指定的建筑保持原样（默认 OutputObjIdx/InputObjIdx = -1）
+            Assert.Equal(-1, result.Buildings[1].OutputObjIdx);
+            Assert.Equal(-1, result.Buildings[1].InputObjIdx);
+            Assert.Equal(0, result.Buildings[1].Yaw[0], 6);
+        }
+
+        [Fact]
+        public void ReverseBeltDirection_DanglingEndFlipsToOtherEnd_NoSpecialCasing()
+        {
+            var bp = BuildFixture();
+            // 链路起点：无上游(InputObjIdx=-1)，只有下游(OutputObjIdx=1)
+            bp.Buildings[0].InputObjIdx = -1;
+            bp.Buildings[0].OutputObjIdx = 1;
+            bp.Buildings[0].InputFromSlot = 0;
+            bp.Buildings[0].OutputToSlot = 0;
+
+            var result = BlueprintTransform.ReverseBeltDirection(bp, new HashSet<int> { 0 });
+            var b = result.Buildings[0];
+
+            // 反转后应变为链路终点：无下游(OutputObjIdx=-1)，只有上游(InputObjIdx=1)
+            Assert.Equal(-1, b.OutputObjIdx);
+            Assert.Equal(1, b.InputObjIdx);
+        }
+
+        [Fact]
+        public void ReverseBeltDirection_WithNullTargetIndices_ReversesAll()
+        {
+            var bp = BuildFixture();
+            bp.Buildings[0].OutputObjIdx = 1;
+            bp.Buildings[1].OutputObjIdx = 0;
+
+            var result = BlueprintTransform.ReverseBeltDirection(bp, targetIndices: null);
+
+            Assert.Equal(-1, result.Buildings[0].OutputObjIdx);
+            Assert.Equal(1, result.Buildings[0].InputObjIdx);
+            Assert.Equal(-1, result.Buildings[1].OutputObjIdx);
+            Assert.Equal(0, result.Buildings[1].InputObjIdx);
+        }
+
+        [Fact]
+        public void ReverseBeltDirection_WithMultipleTargetIndices_OnlyReversesSpecifiedBuildings()
+        {
+            var bp = BuildFixture();
+            bp.Buildings[0].OutputObjIdx = 1;
+            bp.Buildings[1].OutputObjIdx = 0;
+
+            var result = BlueprintTransform.ReverseBeltDirection(bp, new HashSet<int> { 0 });
+
+            // index 0 已反转
+            Assert.Equal(-1, result.Buildings[0].OutputObjIdx);
+            Assert.Equal(1, result.Buildings[0].InputObjIdx);
+            // index 1 未被选中，保持原样
+            Assert.Equal(0, result.Buildings[1].OutputObjIdx);
+            Assert.Equal(-1, result.Buildings[1].InputObjIdx);
+        }
     }
 }
