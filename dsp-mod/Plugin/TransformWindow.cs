@@ -266,14 +266,6 @@ namespace DspBlueprintTransform.Plugin
             GUI.color = prevColor;
         }
 
-        private static void DrawLabeledField(string label, ref string value)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(label, GUILayout.Width(150));
-            value = GUILayout.TextField(value);
-            GUILayout.EndHorizontal();
-        }
-
         private void TryParse()
         {
             try
@@ -281,6 +273,7 @@ namespace DspBlueprintTransform.Plugin
                 _parsed = BlueprintParser.FromStr(_inputCode);
                 _statusMessage = $"解析成功：{_parsed.Buildings.Count} 个建筑";
                 _statusIsError = false;
+                CaptureBaseline();
             }
             catch (Exception ex)
             {
@@ -290,72 +283,93 @@ namespace DspBlueprintTransform.Plugin
             }
         }
 
-        private void ApplyOffset()
-        {
-            if (!EnsureParsed()) return;
-
-            int targetIndex = -1;
-            if (!string.IsNullOrWhiteSpace(_offsetIndex))
-            {
-                if (!IsBeltOnlySmall())
-                {
-                    _statusMessage = "仅当蓝图全部为传送带且数量小于 20 时可指定序号";
-                    _statusIsError = true;
-                    return;
-                }
-                if (!int.TryParse(_offsetIndex, out targetIndex) || targetIndex < 0 || targetIndex >= _parsed!.Buildings.Count)
-                {
-                    _statusMessage = "传送带序号无效";
-                    _statusIsError = true;
-                    return;
-                }
-            }
-
-            double x = ParseOrZero(_offsetX);
-            double y = ParseOrZero(_offsetY);
-            double z = ParseOrZero(_offsetZ);
-            var targetIndices = targetIndex >= 0 ? new System.Collections.Generic.HashSet<int> { targetIndex } : null;
-            var afterHorizontal = BlueprintTransform.HorizontalOffset(_parsed!, x, y, targetIndices);
-            if (z == 0)
-            {
-                Finish(afterHorizontal);
-                return;
-            }
-            var afterVertical = BlueprintTransform.VerticalOffset(afterHorizontal, z, targetIndices);
-            bool addedBase = afterVertical.Buildings.Count > afterHorizontal.Buildings.Count;
-            Finish(afterVertical, addedBase ? "检测到悬空建筑，已自动加地基" : null);
-        }
-
         private bool IsBeltOnlySmall()
             => _parsed != null
                && _parsed.Buildings.Count > 0
                && _parsed.Buildings.Count < 20
                && _parsed.Buildings.All(b => BuildingMeta.IsBelt(b.ItemId));
 
-        private void ApplyLinearTransformationFromFields()
-        {
-            if (!EnsureParsed()) return;
-            double zoomX = ParseOrZero(_zoomX, 1);
-            double zoomY = ParseOrZero(_zoomY, 1);
-            double rotate = ParseOrZero(_rotate, 0);
-            ApplyLinearTransformation(zoomX, zoomY, rotate);
-        }
-
-        private void ApplyLinearTransformation(double zoomX, double zoomY, double rotate)
-        {
-            if (!EnsureParsed()) return;
-            var result = BlueprintTransform.LinearTransformation(_parsed!, zoomX, zoomY, rotate);
-            Finish(result);
-        }
-
         private void ApplyAll()
         {
-            // 将在 Task 4 实现
+            if (!EnsureParsed()) return;
+
+            bool anyDirty = false;
+            var data = _parsed!.Clone();
+
+            if (IsOffsetDirty())
+            {
+                double x = ParseOrZero(_offsetX);
+                double y = ParseOrZero(_offsetY);
+                double z = ParseOrZero(_offsetZ);
+                var indices = ParseBeltIndices(_offsetIndex);
+
+                // 指定传送带序号时需满足全为传送带且数量<20（与网页版限制一致；spec 开放问题待定）
+                if (indices != null && !IsBeltOnlySmall())
+                {
+                    _statusMessage = "仅当蓝图全部为传送带且数量小于 20 时可指定序号";
+                    _statusIsError = true;
+                    return;
+                }
+
+                data = BlueprintTransform.HorizontalOffset(data, x, y, indices);
+                if (z != 0)
+                {
+                    var afterVert = BlueprintTransform.VerticalOffset(data, z, indices);
+                    bool addedBase = afterVert.Buildings.Count > data.Buildings.Count;
+                    data = afterVert;
+                    if (addedBase) _statusMessage = "检测到悬空建筑，已自动加地基";
+                }
+                anyDirty = true;
+            }
+
+            if (IsFlipDirty())
+            {
+                double zoomX = _flipH ? -1 : 1;
+                double zoomY = _flipV ? -1 : 1;
+                data = BlueprintTransform.LinearTransformation(data, zoomX, zoomY, 0);
+                anyDirty = true;
+            }
+
+            if (IsLinearDirty())
+            {
+                double zoomX = ParseOrZero(_zoomX, 1);
+                double zoomY = ParseOrZero(_zoomY, 1);
+                double rotate = ParseOrZero(_rotate, 0);
+                data = BlueprintTransform.LinearTransformation(data, zoomX, zoomY, rotate);
+                anyDirty = true;
+            }
+
+            if (!anyDirty)
+            {
+                _statusMessage = "无变更";
+                _statusIsError = true;
+                return;
+            }
+
+            _parsed = data;
+            _outputCode = BlueprintParser.ToStr(data);
+            GUIUtility.systemCopyBuffer = _outputCode;
+            if (string.IsNullOrEmpty(_statusMessage))
+                _statusMessage = "已应用变换并复制到剪贴板";
+            _statusIsError = false;
+            CaptureBaseline();
         }
 
         private void ResetAll()
         {
-            // 将在 Task 4 实现
+            _offsetX = "0";
+            _offsetY = "0";
+            _offsetZ = "0";
+            _offsetIndex = "";
+            _flipH = false;
+            _flipV = false;
+            _zoomX = "1";
+            _zoomY = "1";
+            _rotate = "0";
+            _outputCode = "";
+            _statusMessage = "";
+            _statusIsError = false;
+            _parsed = null;
         }
 
         private bool EnsureParsed()
@@ -391,5 +405,30 @@ namespace DspBlueprintTransform.Plugin
             }
             return set.Count > 0 ? set : null;
         }
+
+        private void CaptureBaseline()
+        {
+            _baselineOffsetX = _offsetX;
+            _baselineOffsetY = _offsetY;
+            _baselineOffsetZ = _offsetZ;
+            _baselineOffsetIndex = _offsetIndex;
+            _baselineFlipH = _flipH;
+            _baselineFlipV = _flipV;
+            _baselineZoomX = _zoomX;
+            _baselineZoomY = _zoomY;
+            _baselineRotate = _rotate;
+        }
+
+        private bool IsOffsetDirty()
+            => _offsetX != _baselineOffsetX
+            || _offsetY != _baselineOffsetY
+            || _offsetZ != _baselineOffsetZ
+            || _offsetIndex != _baselineOffsetIndex;
+
+        private bool IsFlipDirty()
+            => _flipH != _baselineFlipH || _flipV != _baselineFlipV;
+
+        private bool IsLinearDirty()
+            => _zoomX != _baselineZoomX || _zoomY != _baselineZoomY || _rotate != _baselineRotate;
     }
 }
