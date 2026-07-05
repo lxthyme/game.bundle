@@ -139,3 +139,147 @@ dsp-mod/
 - 新建：`dsp-mod/Blueprint.Tests/ParserRoundTripTests.cs`、`TransformTests.cs`
 - 参考（不修改）：`3rd/edit-dspblue-print/src/utils/parser.js`、`src/utils/itemsUtil.js`、`src/views/Home.vue`（`linearTransformation`/`horizontalOffset`/`verticalOffset` 方法体）
 - 依赖：`3rd/BepInEx/BepInEx_win_x64_5.4.23.5/BepInEx/core/*.dll`（编译期引用）；Windows 游戏机 `DSPGAME_Data/Managed/UnityEngine.*.dll`（待用户提供）
+
+---
+
+# UI 紧凑化优化（2026-07-05 追加）
+
+- 日期：2026-07-05
+- 状态：已确认
+- 基于：`2026-07-02-dsp-blueprint-transform-mod-design.md`
+
+## 背景与约束
+
+TransformWindow 初版 UI 按功能分组纵向排列，每组有独立的"应用"按钮，翻转由按钮即时触发。使用中发现以下问题：
+
+1. **操作分散**：偏移、翻转、线性变换各有一个独立按钮，调整多个参数需多次点击
+2. **翻转不可逆**：点击翻转按钮后立即生效，无法和其他参数一起审视调整
+3. **纵向空间浪费**：每个字段独占一行（label + textbox），窗口纵向空间紧张
+4. **传送带序号限制**：只能指定单个序号，无法同时偏移多条指定传送带
+5. **剪贴板自动读取时机**：`OnEnable` 无条件覆盖，可能导致玩家已输入内容被意外替换
+
+约束：
+
+- 保持 IMGUI（OnGUI + GUILayout），不引入 uGUI
+- 不改变现有 BlueprintTransform 的变换算法逻辑，只改接口签名（单 targetIndex → 多 targetIndices）
+- 窗口已有功能（四角拖拽缩放、双击标题栏重置尺寸、默认宽高自定义）不受影响
+
+## 目标
+
+- UI 紧凑化：字段同行排列，减少纵向空间占用
+- 统一 Apply：一次性按序执行所有变更，按分组跟踪脏状态
+- 翻转交互：从即时按钮改为 checkbox + Apply 统一生效
+- 多传送带序号：支持逗号分隔，同时偏移多条传送带
+- 剪贴板读取策略：仅输入框为空时自动读取，非空时只通过按钮更新
+- Reset：一键清空所有参数、输出和状态（不包含蓝图码和窗口尺寸）
+
+## 关键决策
+
+| 决策点 | 选定方案 | 理由 |
+|--------|---------|------|
+| Apply 执行策略 | 按分组跟踪脏状态，只执行脏分组 | 避免重复执行未变更操作（如连续两次 Apply 不会重复翻转）；用户可能只想调偏移不改翻转 |
+| 脏状态粒度 | 按分组（偏移/翻转/线性变换），非按字段 | 分组内字段高度关联（偏移 X/Y/Z 总是一起生效），按字段粒度增复杂度不增实用价值 |
+| Apply 执行顺序 | 偏移 → 翻转 → 线性变换 | 与网页版操作顺序一致；翻转本质上是一个 zoomX=-1/zoomY=-1 的线性变换，放在偏移之后符合直觉 |
+| 翻转交互 | checkbox + Apply 统一生效 | 替代即时按钮，用户可在 Apply 前任意勾选/取消，与其他参数一起审视；和其余参数统一交互模式 |
+| Reset 范围 | 清空参数+输出+状态+_parsed，保留蓝图码和窗口默认尺寸 | 蓝图码是"输入数据"不应被 Reset 丢弃；窗口尺寸是用户偏好设置 |
+| 多传送带序号格式 | 逗号分隔文本（如 "0,3,7"） | 最简实现，无需额外 UI 控件；和网页版输入习惯一致 |
+| BlueprintTransform 接口 | `targetIndex: int` → `targetIndices: HashSet<int>?` | 保持重载简洁（null=全部），HashSet 查询 O(1)；单序号 "5" 解析为 `{5}` 统一走集合路径 |
+
+## 备选方案（被否决）
+
+| 方案 | 否决理由 |
+|------|---------|
+| Apply 始终执行全部三组操作 | 未改动的分组会被重复执行，如翻转已应用再点 Apply 会再翻一次 |
+| Reset 也清空蓝图码 | 玩家通常只想重置参数重新调，蓝图码需要保留 |
+| 多传送带序号用多选列表 UI | IMGUI 下实现复杂，且传送带数量通常不多（当前限制<20），逗号文本输入更快 |
+| 翻转保留即时按钮 + 新增 checkbox | 两套触发机制并存增加认知负担，checkbox 统一后不再需要按钮 |
+
+## UI 布局（紧凑化后）
+
+```
+┌─ 蓝图变换 ──────────────────────────────┐
+│ 窗口默认宽高: [宽度: 420] [高度: 560] [设置] │
+│                                          │
+│ 蓝图码            [从剪贴板读取] [解析]    │
+│ ┌──────────────────────────────────────┐ │
+│ │  (固定高度 TextArea)                  │ │
+│ └──────────────────────────────────────┘ │
+│ ✓ 解析成功：N 个建筑                      │
+│                                          │
+│ 偏移:  X: [0]  Y: [0]  Z: [0]           │
+│ 水平翻转: ☐横向  ☐纵向                   │
+│ 线性变换:  横向: [1]  纵向: [1]           │
+│ 旋转角度(-360~360): [0]                  │
+│ 传送带序号(留空=全部): []                 │
+│                                          │
+│ [应用] [重置]                             │
+│                                          │
+│ 输出蓝图码                                │
+│ ┌──────────────────────────────────────┐ │
+│ │  (固定高度 TextArea, 只读)             │ │
+│ └──────────────────────────────────────┘ │
+│ [复制到剪贴板]                            │
+└──────────────────────────────────────────┘
+```
+
+## 数据流与状态管理
+
+```
+OnEnable:
+  if (_inputCode == "") → _inputCode = GUIUtility.systemCopyBuffer
+
+[解析] 按钮:
+  _parsed = BlueprintParser.FromStr(_inputCode)
+  CaptureBaseline()  ← 记录当前字段值作为脏状态基线
+
+[应用] 按钮:
+  data = _parsed.Clone()
+  if IsOffsetDirty()  → data = HorizontalOffset(data, x, y, targetIndices)
+                          data = VerticalOffset(data, z, targetIndices)  // if z != 0
+  if IsFlipDirty()    → zoomX = _flipH ? -1 : 1; zoomY = _flipV ? -1 : 1
+                          data = LinearTransformation(data, zoomX, zoomY, 0)
+  if IsLinearDirty()  → data = LinearTransformation(data, _zoomX, _zoomY, _rotate)
+  序列化 → _outputCode, 写入剪贴板
+  CaptureBaseline()  ← 更新基线，防止重复应用
+
+[重置] 按钮:
+  偏移恢复 "0"/"0"/"0"/""
+  翻转 ☐☐
+  线性变换恢复 "1"/"1"/"0"
+  _outputCode = ""
+  _statusMessage = ""
+  _parsed = null
+
+CaptureBaseline():
+  _baselineOffsetX = _offsetX; ... (所有参数字段)
+  _baselineFlipH = _flipH; _baselineFlipV = _flipV;
+  _baselineZoomX = _zoomX; _baselineZoomY = _zoomY; _baselineRotate = _rotate;
+```
+
+## 接口变更
+
+`BlueprintTransform.cs`:
+
+```csharp
+// Before
+public static BlueprintData HorizontalOffset(BlueprintData bp, double offsetX, double offsetY, int targetIndex = -1)
+public static BlueprintData VerticalOffset(BlueprintData bp, double offsetZ, int targetIndex = -1)
+
+// After
+public static BlueprintData HorizontalOffset(BlueprintData bp, double offsetX, double offsetY, HashSet<int>? targetIndices = null)
+public static BlueprintData VerticalOffset(BlueprintData bp, double offsetZ, HashSet<int>? targetIndices = null)
+```
+
+匹配逻辑：`targetIndex >= 0 && b.Index != targetIndex` → `targetIndices != null && !targetIndices.Contains(b.Index)`。
+
+## 涉及的文件路径
+
+- **修改**：`dsp-mod/Plugin/TransformWindow.cs` — UI 布局重排、脏状态跟踪、Reset/Apply 逻辑、多序号解析
+- **修改**：`dsp-mod/Blueprint/BlueprintTransform.cs` — `HorizontalOffset`/`VerticalOffset` 签名变更（int → HashSet<int>?）
+- **修改**：`dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs` — 适配新接口 + 新增多序号测试用例
+
+## 开放问题/风险
+
+1. **IsBeltOnlySmall 限制**：当前传送带序号功能限制"蓝图全部为传送带且数量<20"才能指定序号。改为多序号后这个限制是否保留？如果保留，多序号场景下的校验逻辑需更新（所有指定序号均须合法）。
+2. **翻转 + 线性变换的叠加**：用户同时勾选翻转和设置线性变换 zoomX=-2，两次 LinearTransformation 调用叠加后的行为需和网页版交叉验证。
+3. **基线在窗口重开时丢失**：`CaptureBaseline` 数据存在字段里，窗口关闭（GameObject Destroy）后丢失。玩家关闭再打开窗口时，之前 Apply 过的操作会被视为"新变更"再次执行——这是预期行为（字段值还在、基线重置），但需在 UI 上保证字段值不会被意外清空。
