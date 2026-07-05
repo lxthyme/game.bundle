@@ -74,7 +74,7 @@ namespace DspBlueprintTransform.Plugin
         // 窗口变宽/变高时，输入输出文本框跟着放大；其余控件保持原有固定尺寸
         // 减去的量比 ContentAreaPadding 多留一点，给滚动视图的竖直滚动条腾出空间
         private float TextAreaWidth => Mathf.Max(200f, _windowRect.width - 45f);
-        private float TextAreaHeight => DefaultTextAreaHeight + Mathf.Max(0f, _windowRect.height - DefaultWindowHeight) / 2f;
+        private float TextAreaHeight => (DefaultTextAreaHeight + Mathf.Max(0f, _windowRect.height - DefaultWindowHeight) / 2f) / 2f;
 
         private void OnEnable()
         {
@@ -111,14 +111,15 @@ namespace DspBlueprintTransform.Plugin
             CreateBlockPanel();
             if (_blockPanel == null) return;
 
-            var canvasRt = _blockPanel.transform.parent.GetComponent<RectTransform>();
+            var canvas = _blockPanel.transform.parent.GetComponent<Canvas>();
+            float scale = canvas != null && canvas.scaleFactor > 0f ? canvas.scaleFactor : 1f;
+
             var rt = _blockPanel.GetComponent<RectTransform>();
-            float sx = canvasRt.sizeDelta.x / Screen.width;
-            float sy = canvasRt.sizeDelta.y / Screen.height;
-            rt.sizeDelta = new Vector2(sx * _windowRect.width, sy * _windowRect.height);
-            rt.localPosition = new Vector2(
-                -canvasRt.sizeDelta.x / 2f + _windowRect.x * sx,
-                 canvasRt.sizeDelta.y / 2f - _windowRect.y * sy - rt.sizeDelta.y);
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.sizeDelta = new Vector2(_windowRect.width, _windowRect.height) / scale;
+            rt.anchoredPosition = new Vector2(_windowRect.x, -_windowRect.y) / scale;
         }
 
         private void OnGUI()
@@ -129,10 +130,6 @@ namespace DspBlueprintTransform.Plugin
                 GUILayout.Width(_windowRect.width), GUILayout.Height(_windowRect.height));
 
             UpdateBlockPanel();
-
-            // 阻止窗口内事件穿透到 IMGUI 层（原生菜单、其他 mod 窗口）
-            if (_windowRect.Contains(Event.current.mousePosition))
-                Event.current.Use();
         }
 
         private void ApplyDefaultWindowSize()
