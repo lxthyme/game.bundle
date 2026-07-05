@@ -85,6 +85,20 @@ namespace DspBlueprintTransform.Plugin
             _windowRect = GUILayout.Window(
                 GetInstanceID(), _windowRect, DrawWindow, "蓝图变换",
                 GUILayout.Width(_windowRect.width), GUILayout.Height(_windowRect.height));
+
+            // 阻止窗口内操作穿透到后方游戏界面
+            if (_windowRect.Contains(Event.current.mousePosition))
+            {
+                switch (Event.current.type)
+                {
+                    case EventType.MouseDown:
+                    case EventType.MouseUp:
+                    case EventType.MouseDrag:
+                    case EventType.ScrollWheel:
+                        Event.current.Use();
+                        break;
+                }
+            }
         }
 
         private void ApplyDefaultWindowSize()
