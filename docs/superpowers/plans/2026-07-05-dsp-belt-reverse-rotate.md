@@ -177,7 +177,7 @@ git commit -m "feat(dsp-mod): 新增传送带方向反转 ReverseBeltDirection"
 - Consumes：同 Task 1 的 `BlueprintBuilding.Yaw`（`double[2]`）；不涉及 `LocalOffset`/`OutputObjIdx`/`InputObjIdx`/`Tilt`。
 - Produces：`public static BlueprintData RotateInPlace(BlueprintData bp, double degrees, HashSet<int>? targetIndices = null)`，供 Task 3 的 `TransformWindow.ApplyAll` 调用。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `dsp-mod/Blueprint.Tests/BlueprintTransformTests.cs` 中，紧接 Task 1 新增的四个测试之后追加：
 
@@ -221,12 +221,12 @@ git commit -m "feat(dsp-mod): 新增传送带方向反转 ReverseBeltDirection"
         }
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run: `cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod/dsp-mod && dotnet test Blueprint.Tests/Blueprint.Tests.csproj --filter RotateInPlace`
 Expected: 编译失败（`RotateInPlace` 未定义）或 3 个测试全部 FAIL。
 
-- [ ] **Step 3: 实现 RotateInPlace**
+- [x] **Step 3: 实现 RotateInPlace**
 
 紧接 Task 1 插入的 `ReverseBeltDirection` 方法之后（仍在 `LinearTransformation` 之前）插入：
 
@@ -246,12 +246,12 @@ Expected: 编译失败（`RotateInPlace` 未定义）或 3 个测试全部 FAIL�
 
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run: `cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod/dsp-mod && dotnet test Blueprint.Tests/Blueprint.Tests.csproj --filter RotateInPlace`
 Expected: `Passed! - Failed: 0, Passed: 3, ...`
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 cd /Users/lxthyme/Desktop/Lucky/lxthyme.Game/dsp/mod/dsp-mod

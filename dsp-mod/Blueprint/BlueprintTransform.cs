@@ -104,6 +104,19 @@ namespace DspBlueprintTransform.Blueprint
             return res;
         }
 
+        public static BlueprintData RotateInPlace(BlueprintData bp, double degrees, System.Collections.Generic.HashSet<int>? targetIndices = null)
+        {
+            var res = bp.Clone();
+            foreach (var b in res.Buildings)
+            {
+                if (targetIndices != null && !targetIndices.Contains(b.Index)) continue;
+
+                b.Yaw[0] += degrees;
+                b.Yaw[1] += degrees;
+            }
+            return res;
+        }
+
         public static BlueprintData LinearTransformation(BlueprintData bp, double zoomX, double zoomY, double rotateDeg)
         {
             var res = bp.Clone();

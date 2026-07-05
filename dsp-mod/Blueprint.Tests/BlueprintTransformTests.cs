@@ -315,5 +315,43 @@ namespace DspBlueprintTransform.Blueprint.Tests
             Assert.Equal(0, result.Buildings[1].OutputObjIdx);
             Assert.Equal(-1, result.Buildings[1].InputObjIdx);
         }
+
+        [Fact]
+        public void RotateInPlace_AddsDegreesToYaw_OnTargetBuilding()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.RotateInPlace(bp, 45, new HashSet<int> { 0 });
+
+            Assert.Equal(135, result.Buildings[0].Yaw[0], 6); // 原 90 + 45
+            Assert.Equal(135, result.Buildings[0].Yaw[1], 6);
+            // 未指定的建筑保持原样
+            Assert.Equal(0, result.Buildings[1].Yaw[0], 6);
+        }
+
+        [Fact]
+        public void RotateInPlace_WithNullTargetIndices_RotatesAll()
+        {
+            var bp = BuildFixture();
+            var result = BlueprintTransform.RotateInPlace(bp, 30, targetIndices: null);
+
+            Assert.Equal(120, result.Buildings[0].Yaw[0], 6); // 90 + 30
+            Assert.Equal(30, result.Buildings[1].Yaw[0], 6); // 0 + 30
+        }
+
+        [Fact]
+        public void RotateInPlace_DoesNotChangeCoordinatesOrTopology()
+        {
+            var bp = BuildFixture();
+            bp.Buildings[0].OutputObjIdx = 1;
+            bp.Buildings[0].InputObjIdx = -1;
+
+            var result = BlueprintTransform.RotateInPlace(bp, 90, new HashSet<int> { 0 });
+
+            Assert.Equal(0.5, result.Buildings[0].LocalOffset[0].X, 6);
+            Assert.Equal(0.5, result.Buildings[0].LocalOffset[0].Y, 6);
+            Assert.Equal(1, result.Buildings[0].OutputObjIdx);
+            Assert.Equal(-1, result.Buildings[0].InputObjIdx);
+            Assert.Equal(0, result.Buildings[0].Tilt, 6);
+        }
     }
 }
